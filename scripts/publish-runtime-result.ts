@@ -72,6 +72,12 @@ async function main() {
   // 写入已消毒、校验过的标准 JSON
   fs.writeFileSync(finalDest, JSON.stringify(validatedData, null, 2), "utf-8");
   console.log(`Successfully verified and published runtime result to: ${finalDest}`);
+
+  // 严格输出规范化的小写相对路径至 GITHUB_OUTPUT，供发布工作流仅暂存该单一文件
+  const relativeFilePath = `${expectedOwner.toLowerCase()}/${expectedRepo.toLowerCase()}/${expectedCommit.toLowerCase()}/${targetFilename}`;
+  if (process.env.GITHUB_OUTPUT) {
+    fs.appendFileSync(process.env.GITHUB_OUTPUT, `published_file=${relativeFilePath}\n`);
+  }
 }
 
 main().catch((err) => {

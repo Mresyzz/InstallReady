@@ -30,7 +30,8 @@
       "description": "Zero-config Linux runtime compatibility gate for shell scripts.",
       "featured": true,
       "verificationType": "static_only",
-      "runtimeEnabled": false
+      "runtimeEnabled": false,
+      "runtimeScripts": []
     },
     {
       "owner": "nvm-sh",
@@ -40,7 +41,8 @@
       "description": "Node Version Manager - POSIX-compliant bash script to manage multiple active node.js versions.",
       "featured": true,
       "verificationType": "static_only",
-      "runtimeEnabled": false
+      "runtimeEnabled": false,
+      "runtimeScripts": []
     },
     {
       "owner": "pyenv",
@@ -50,7 +52,8 @@
       "description": "This tool is used to install pyenv and its plugins.",
       "featured": true,
       "verificationType": "static_only",
-      "runtimeEnabled": false
+      "runtimeEnabled": false,
+      "runtimeScripts": []
     },
     {
       "owner": "docker",
@@ -60,7 +63,8 @@
       "description": "Docker convenience install script.",
       "featured": true,
       "verificationType": "static_only",
-      "runtimeEnabled": false
+      "runtimeEnabled": false,
+      "runtimeScripts": []
     },
     {
       "owner": "ohmyzsh",
@@ -70,7 +74,8 @@
       "description": "A delightful community-driven framework for managing your zsh configuration.",
       "featured": true,
       "verificationType": "static_only",
-      "runtimeEnabled": false
+      "runtimeEnabled": false,
+      "runtimeScripts": []
     }
   ],
   "aiCodingVertical": [
@@ -79,31 +84,31 @@
       "vendor": "Anthropic",
       "repo": "anthropics/claude-code",
       "installCommand": "npm install -g @anthropic-ai/claude-code",
-      "targetScript": "install.sh",
+      "targetScript": null,
       "status": "not_tested"
     },
     {
       "name": "Codex CLI",
-      "vendor": "Community",
-      "repo": "openai/codex-cli",
-      "installCommand": "curl -fsSL https://example.com/install.sh | sh",
-      "targetScript": "install.sh",
+      "vendor": "OpenAI",
+      "repo": "openai/codex",
+      "installCommand": null,
+      "targetScript": null,
       "status": "not_tested"
     },
     {
       "name": "Gemini CLI",
       "vendor": "Google",
       "repo": "google-gemini/gemini-cli",
-      "installCommand": "curl -sSf https://install.gemini.dev | bash",
-      "targetScript": "setup.sh",
+      "installCommand": null,
+      "targetScript": null,
       "status": "not_tested"
     },
     {
       "name": "OpenCode",
       "vendor": "Open Source",
       "repo": "opencode-ai/opencode",
-      "installCommand": "curl -fsSL https://opencode.dev/install.sh | bash",
-      "targetScript": "install.sh",
+      "installCommand": null,
+      "targetScript": null,
       "status": "not_tested"
     },
     {
@@ -111,7 +116,7 @@
       "vendor": "Alibaba",
       "repo": "QwenLM/qwen-code",
       "installCommand": "pip install qwen-code",
-      "targetScript": "setup.sh",
+      "targetScript": null,
       "status": "not_tested"
     },
     {
@@ -119,7 +124,7 @@
       "vendor": "GitHub",
       "repo": "github/copilot-cli",
       "installCommand": "gh extension install github/gh-copilot",
-      "targetScript": "install.sh",
+      "targetScript": null,
       "status": "not_tested"
     }
   ]

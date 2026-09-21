@@ -4,15 +4,11 @@ on:
   workflow_dispatch:
     inputs:
       target_repo:
-        description: 'Allowlisted repository to verify (e.g. Mresyzz/opsscript-gate)'
+        description: 'Allowlisted repository to verify (must match showcase allowlist, e.g. Mresyzz/opsscript-gate)'
         required: true
-        default: 'Mresyzz/opsscript-gate'
       script_path:
-        description: 'Script path within repository (e.g. install.sh)'
+        description: 'Authorized script path within repository (must be in runtimeScripts, e.g. install.sh)'
         required: true
-        default: 'install.sh'
-  schedule:
-    - cron: '0 4 * * 1' # 每周一定时触发受信任精选集检验
 
 permissions:
   contents: read
@@ -26,13 +22,17 @@ jobs:
     outputs:
       target_owner: ${{ steps.parse-target.outputs.target_owner }}
       target_repo: ${{ steps.parse-target.outputs.target_repo }}
+      target_owner_normalized: ${{ steps.parse-target.outputs.target_owner_normalized }}
+      target_repo_normalized: ${{ steps.parse-target.outputs.target_repo_normalized }}
       commit_sha: ${{ steps.target-meta.outputs.commit_sha }}
       script_path: ${{ steps.parse-target.outputs.script_path }}
 
     steps:
-      - name: Checkout InstallReady source
+      - name: Checkout trusted InstallReady source code from main
         uses: actions/checkout@v4
         with:
+          ref: main
+          path: trusted-src
           persist-credentials: false # 杜绝凭证持久化
 
       - name: Setup Node.js
@@ -40,47 +40,18 @@ jobs:
         with:
           node-version: 22
 
-      - name: Parse and validate target against trusted showcase allowlist
+      - name: Install dependencies in trusted-src
+        working-directory: trusted-src
+        run: npm ci --ignore-scripts
+
+      - name: Validate target and script against trusted showcase configuration
         id: parse-target
-        run: |
-          RAW_INPUT="${{ inputs.target_repo || 'Mresyzz/opsscript-gate' }}"
-          RAW_SCRIPT="${{ inputs.script_path || 'install.sh' }}"
-          
-          # 使用 node 脚本加载 data/showcase.json 进行白名单校验
-          node -e '
-            const fs = require("fs");
-            const rawRepo = process.env.RAW_INPUT.trim();
-            const rawScript = process.env.RAW_SCRIPT.trim();
-            const parts = rawRepo.split("/");
-            if (parts.length !== 2) {
-              console.error("Invalid target_repo format:", rawRepo);
-              process.exit(1);
-            }
-            const [owner, repo] = parts;
-            const showcase = JSON.parse(fs.readFileSync("data/showcase.json", "utf-8"));
-            
-            // 严格核对是否在受信任白名单中
-            const match = showcase.repositories.find(
-              (r) => r.owner.toLowerCase() === owner.toLowerCase() && r.repo.toLowerCase() === repo.toLowerCase()
-            );
-            if (!match) {
-              console.error(`Repository ${rawRepo} is NOT in the showcase allowlist.`);
-              process.exit(1);
-            }
-            if (match.runtimeEnabled !== true && process.env.GITHUB_EVENT_NAME !== "workflow_dispatch") {
-              console.error(`Repository ${rawRepo} is not enabled for scheduled runtime scan.`);
-              process.exit(1);
-            }
-            
-            const fsOut = process.env.GITHUB_OUTPUT;
-            fs.appendFileSync(fsOut, `target_owner=${owner}\n`);
-            fs.appendFileSync(fsOut, `target_repo=${repo}\n`);
-            fs.appendFileSync(fsOut, `target_full_name=${owner}/${repo}\n`);
-            fs.appendFileSync(fsOut, `script_path=${rawScript}\n`);
-          '
+        working-directory: trusted-src
         env:
-          RAW_INPUT: ${{ inputs.target_repo || 'Mresyzz/opsscript-gate' }}
-          RAW_SCRIPT: ${{ inputs.script_path || 'install.sh' }}
+          TARGET_REPO_INPUT: ${{ inputs.target_repo }}
+          SCRIPT_PATH_INPUT: ${{ inputs.script_path }}
+        run: |
+          npx tsx scripts/validate-runtime-target.ts
 
       - name: Checkout target showcase repository
         uses: actions/checkout@v4
@@ -133,17 +104,15 @@ jobs:
             exit $OPSSCRIPT_EXIT
           fi
 
-      - name: Install InstallReady dependencies
-        run: npm ci --ignore-scripts
-
       - name: Normalize captured JSON into InstallReady envelope
+        working-directory: trusted-src
         env:
-          RAW_JSON_PATH: staging/opsscript-raw.json
+          RAW_JSON_PATH: ../staging/opsscript-raw.json
           EXPECTED_OWNER: ${{ steps.parse-target.outputs.target_owner }}
           EXPECTED_REPO: ${{ steps.parse-target.outputs.target_repo }}
           EXPECTED_COMMIT: ${{ steps.target-meta.outputs.commit_sha }}
           EXPECTED_SCRIPT: ${{ steps.parse-target.outputs.script_path }}
-          OUTPUT_PATH: staging/normalized-result.json
+          OUTPUT_PATH: ../staging/normalized-result.json
         run: |
           npx tsx scripts/normalize-opsscript-result.ts
 
@@ -162,9 +131,10 @@ jobs:
       contents: write # 仅在独立的发布任务中赋予写入权限，且本任务绝不执行外部代码
 
     steps:
-      - name: Checkout trusted InstallReady source code
+      - name: Checkout trusted InstallReady source code from main
         uses: actions/checkout@v4
         with:
+          ref: main
           path: trusted-src
           persist-credentials: false
 
@@ -200,6 +170,7 @@ jobs:
           path: downloaded-artifact
 
       - name: Validate schema and publish structured result
+        id: publish
         working-directory: trusted-src
         env:
           ARTIFACT_PATH: ../downloaded-artifact/normalized-result.json
@@ -209,7 +180,6 @@ jobs:
           EXPECTED_SCRIPT: ${{ needs.runtime-scan.outputs.script_path }}
           OUTPUT_BASE_DIR: ../results-branch
         run: |
-          # 仅在受信任的代码目录中运行发布校验脚本
           npx tsx scripts/publish-runtime-result.ts
 
       - name: Commit and push runtime results
@@ -217,16 +187,17 @@ jobs:
         run: |
           git config user.name "InstallReady Verification Bot"
           git config user.email "bot@installready.dev"
-          TARGET_DIR="${{ needs.runtime-scan.outputs.target_owner }}"
-          if [ -d "$TARGET_DIR" ]; then
-            git add "$TARGET_DIR"
-            if git diff --staged --quiet; then
-              echo "No changes to commit."
-            else
-              git commit -m "chore(results): publish verification for ${{ needs.runtime-scan.outputs.target_owner }}/${{ needs.runtime-scan.outputs.target_repo }}@${{ needs.runtime-scan.outputs.commit_sha }}"
-              git push origin runtime-results
-            fi
-          else
-            echo "Target output directory $TARGET_DIR was not found."
+          PUBLISHED_FILE="${{ steps.publish.outputs.published_file }}"
+          if [ -z "$PUBLISHED_FILE" ] || [ ! -f "$PUBLISHED_FILE" ]; then
+            echo "Expected published file was not generated: '$PUBLISHED_FILE'"
             exit 1
+          fi
+
+          # 仅严格暂存受信任发布脚本生成的单一结果文件，绝不执行 git add -A 或添加整个目录
+          git add "$PUBLISHED_FILE"
+          if git diff --staged --quiet; then
+            echo "No changes to commit."
+          else
+            git commit -m "chore(results): publish verification for ${{ needs.runtime-scan.outputs.target_owner_normalized }}/${{ needs.runtime-scan.outputs.target_repo_normalized }}@${{ needs.runtime-scan.outputs.commit_sha }}"
+            git push origin runtime-results
           fi

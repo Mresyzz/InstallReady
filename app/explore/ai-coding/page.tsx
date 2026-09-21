@@ -66,9 +66,13 @@ export default function AiCodingPage() {
                       {tool.vendor}
                     </td>
                     <td className="py-3.5 px-4">
-                      <code className="px-2 py-1 rounded bg-muted font-mono text-[11px] text-foreground block max-w-xs truncate">
-                        {tool.installCommand}
-                      </code>
+                      {tool.installCommand ? (
+                        <code className="px-2 py-1 rounded bg-muted font-mono text-[11px] text-foreground block max-w-xs truncate">
+                          {tool.installCommand}
+                        </code>
+                      ) : (
+                        <span className="text-[11px] font-mono text-zinc-400 italic">No shell installer</span>
+                      )}
                     </td>
                     <td className="py-3.5 px-4 text-center font-mono">
                       {isTested ? (
@@ -98,13 +102,23 @@ export default function AiCodingPage() {
                       )}
                     </td>
                     <td className="py-3.5 px-4 text-right">
-                      <Link
-                        href={`/r/${tool.repo}?script=${encodeURIComponent(tool.targetScript)}`}
-                        className="inline-flex items-center gap-1 text-xs font-mono text-blue-500 hover:underline"
-                      >
-                        <span>Analyze</span>
-                        <Terminal className="h-3 w-3" />
-                      </Link>
+                      {tool.targetScript ? (
+                        <Link
+                          href={`/r/${tool.repo}?script=${encodeURIComponent(tool.targetScript)}`}
+                          className="inline-flex items-center gap-1 text-xs font-mono text-blue-500 hover:underline"
+                        >
+                          <span>Analyze</span>
+                          <Terminal className="h-3 w-3" />
+                        </Link>
+                      ) : (
+                        <Link
+                          href={`/r/${tool.repo}`}
+                          className="inline-flex items-center gap-1 text-xs font-mono text-blue-500 hover:underline"
+                        >
+                          <span>Explore</span>
+                          <Terminal className="h-3 w-3" />
+                        </Link>
+                      )}
                     </td>
                   </tr>
                 );
