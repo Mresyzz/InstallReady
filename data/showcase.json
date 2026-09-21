@@ -1,0 +1,131 @@
+{
+  "categories": [
+    {
+      "id": "ai-coding",
+      "name": "AI Coding Tools",
+      "description": "Installer and setup scripts for CLI agents and AI coding assistants."
+    },
+    {
+      "id": "dev-cli",
+      "name": "Developer CLI",
+      "description": "Developer tooling, package managers, and command-line utilities."
+    },
+    {
+      "id": "self-hosted",
+      "name": "Self-hosted Tools",
+      "description": "Self-hosted server stacks, monitoring agents, and daemon bootstraps."
+    },
+    {
+      "id": "dotfiles",
+      "name": "Bootstrap & Dotfiles",
+      "description": "Environment setups, dotfile installers, and workstation provisioning scripts."
+    }
+  ],
+  "repositories": [
+    {
+      "owner": "Mresyzz",
+      "repo": "opsscript-gate",
+      "category": "dev-cli",
+      "defaultScript": "install.sh",
+      "description": "Zero-config Linux runtime compatibility gate for shell scripts.",
+      "featured": true,
+      "verificationType": "static_only",
+      "runtimeEnabled": false,
+      "runtimeScripts": []
+    },
+    {
+      "owner": "nvm-sh",
+      "repo": "nvm",
+      "category": "dev-cli",
+      "defaultScript": "install.sh",
+      "description": "Node Version Manager - POSIX-compliant bash script to manage multiple active node.js versions.",
+      "featured": true,
+      "verificationType": "static_only",
+      "runtimeEnabled": false,
+      "runtimeScripts": []
+    },
+    {
+      "owner": "pyenv",
+      "repo": "pyenv-installer",
+      "category": "dev-cli",
+      "defaultScript": "bin/pyenv-installer",
+      "description": "This tool is used to install pyenv and its plugins.",
+      "featured": true,
+      "verificationType": "static_only",
+      "runtimeEnabled": false,
+      "runtimeScripts": []
+    },
+    {
+      "owner": "docker",
+      "repo": "docker-install",
+      "category": "self-hosted",
+      "defaultScript": "install.sh",
+      "description": "Docker convenience install script.",
+      "featured": true,
+      "verificationType": "static_only",
+      "runtimeEnabled": false,
+      "runtimeScripts": []
+    },
+    {
+      "owner": "ohmyzsh",
+      "repo": "ohmyzsh",
+      "category": "dotfiles",
+      "defaultScript": "tools/install.sh",
+      "description": "A delightful community-driven framework for managing your zsh configuration.",
+      "featured": true,
+      "verificationType": "static_only",
+      "runtimeEnabled": false,
+      "runtimeScripts": []
+    }
+  ],
+  "aiCodingVertical": [
+    {
+      "name": "Claude Code",
+      "vendor": "Anthropic",
+      "repo": "anthropics/claude-code",
+      "installCommand": "npm install -g @anthropic-ai/claude-code",
+      "targetScript": null,
+      "status": "not_tested"
+    },
+    {
+      "name": "Codex CLI",
+      "vendor": "OpenAI",
+      "repo": "openai/codex",
+      "installCommand": null,
+      "targetScript": null,
+      "status": "not_tested"
+    },
+    {
+      "name": "Gemini CLI",
+      "vendor": "Google",
+      "repo": "google-gemini/gemini-cli",
+      "installCommand": null,
+      "targetScript": null,
+      "status": "not_tested"
+    },
+    {
+      "name": "OpenCode",
+      "vendor": "Open Source",
+      "repo": "opencode-ai/opencode",
+      "installCommand": null,
+      "targetScript": null,
+      "status": "not_tested"
+    },
+    {
+      "name": "Qwen Code",
+      "vendor": "Alibaba",
+      "repo": "QwenLM/qwen-code",
+      "installCommand": "pip install qwen-code",
+      "targetScript": null,
+      "status": "not_tested"
+    },
+    {
+      "name": "GitHub Copilot CLI",
+      "vendor": "GitHub",
+      "repo": "github/copilot-cli",
+      "installCommand": "gh extension install github/gh-copilot",
+      "targetScript": null,
+      "status": "not_tested"
+    }
+  ]
+}

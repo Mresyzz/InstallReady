@@ -1,0 +1,203 @@
+name: Showcase Runtime Verification
+
+on:
+  workflow_dispatch:
+    inputs:
+      target_repo:
+        description: 'Allowlisted repository to verify (must match showcase allowlist, e.g. Mresyzz/opsscript-gate)'
+        required: true
+      script_path:
+        description: 'Authorized script path within repository (must be in runtimeScripts, e.g. install.sh)'
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  runtime-scan:
+    name: Isolated OpsScript Gate Execution
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read # 严格只读权限，绝不泄露凭据
+    outputs:
+      target_owner: ${{ steps.parse-target.outputs.target_owner }}
+      target_repo: ${{ steps.parse-target.outputs.target_repo }}
+      target_owner_normalized: ${{ steps.parse-target.outputs.target_owner_normalized }}
+      target_repo_normalized: ${{ steps.parse-target.outputs.target_repo_normalized }}
+      commit_sha: ${{ steps.target-meta.outputs.commit_sha }}
+      script_path: ${{ steps.parse-target.outputs.script_path }}
+
+    steps:
+      - name: Checkout trusted InstallReady source code from main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          path: trusted-src
+          persist-credentials: false # 杜绝凭证持久化
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install dependencies in trusted-src
+        working-directory: trusted-src
+        run: npm ci --ignore-scripts
+
+      - name: Validate target and script against trusted showcase configuration
+        id: parse-target
+        working-directory: trusted-src
+        env:
+          TARGET_REPO_INPUT: ${{ inputs.target_repo }}
+          SCRIPT_PATH_INPUT: ${{ inputs.script_path }}
+        run: |
+          npx tsx scripts/validate-runtime-target.ts
+
+      - name: Checkout target showcase repository
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ steps.parse-target.outputs.target_full_name }}
+          path: target-repo
+          persist-credentials: false # 第三方代码环境绝对不保留凭据
+
+      - name: Get target commit SHA
+        id: target-meta
+        working-directory: target-repo
+        run: |
+          SHA=$(git rev-parse HEAD)
+          if [[ ! "$SHA" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "Invalid commit SHA: $SHA"
+            exit 1
+          fi
+          echo "commit_sha=$SHA" >> $GITHUB_OUTPUT
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install OpsScript Gate pinned release commit
+        run: |
+          # 强制绑定不可变全量发布哈希 eb41fd07a3dd641f4a347c6213302ef1b6f6eb71 (v0.4.1)
+          python -m pip install "git+https://github.com/Mresyzz/opsscript-gate.git@eb41fd07a3dd641f4a347c6213302ef1b6f6eb71"
+
+      - name: Execute OpsScript Gate and capture native JSON
+        run: |
+          mkdir -p staging
+          set +e
+          # 关键安全/数据清洁：覆盖 GITHUB_ACTIONS=false 阻止写入 GitHub annotation 污染 stdout 结果 JSON
+          GITHUB_ACTIONS=false python -m opsscript_gate.cli run \
+            "target-repo/${{ steps.parse-target.outputs.script_path }}" \
+            --shell auto \
+            --timeout 60 \
+            --mem-limit 256m \
+            --pids-limit 128 \
+            --network none \
+            --format json > staging/opsscript-raw.json
+          OPSSCRIPT_EXIT=$?
+          set -e
+          
+          # OpsScript Gate 规范：0 为全部通过，1 为至少一个发行版失败或报错
+          # 0 和 1 均为有效的兼容性测量结论，必须予以保留并归一化发布
+          if [ $OPSSCRIPT_EXIT -ne 0 ] && [ $OPSSCRIPT_EXIT -ne 1 ]; then
+            echo "OpsScript Gate execution failed with infrastructure error code: $OPSSCRIPT_EXIT"
+            exit $OPSSCRIPT_EXIT
+          fi
+
+      - name: Normalize captured JSON into InstallReady envelope
+        working-directory: trusted-src
+        env:
+          RAW_JSON_PATH: ../staging/opsscript-raw.json
+          EXPECTED_OWNER: ${{ steps.parse-target.outputs.target_owner }}
+          EXPECTED_REPO: ${{ steps.parse-target.outputs.target_repo }}
+          EXPECTED_COMMIT: ${{ steps.target-meta.outputs.commit_sha }}
+          EXPECTED_SCRIPT: ${{ steps.parse-target.outputs.script_path }}
+          OUTPUT_PATH: ../staging/normalized-result.json
+        run: |
+          npx tsx scripts/normalize-opsscript-result.ts
+
+      - name: Upload sanitized JSON artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: runtime-scan-artifact
+          path: staging/normalized-result.json
+          retention-days: 1
+
+  publish-results:
+    name: Publish Runtime Verification Results
+    needs: runtime-scan
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # 仅在独立的发布任务中赋予写入权限，且本任务绝不执行外部代码
+
+    steps:
+      - name: Checkout trusted InstallReady source code from main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          path: trusted-src
+          persist-credentials: false
+
+      - name: Checkout or initialize runtime-results branch
+        run: |
+          git clone "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git" results-branch
+          cd results-branch
+          git fetch origin runtime-results:runtime-results || true
+          if git show-ref --verify --quiet refs/heads/runtime-results; then
+            git checkout runtime-results
+          else
+            echo "Initializing orphan runtime-results branch..."
+            git checkout --orphan runtime-results
+            git rm -rf . || true
+            echo "# InstallReady Runtime Verification Results" > README.md
+            git add README.md
+            git -c user.name="InstallReady Bot" -c user.email="bot@installready.dev" commit -m "chore: initialize runtime-results branch"
+          fi
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install dependencies in trusted-src
+        working-directory: trusted-src
+        run: npm ci --ignore-scripts
+
+      - name: Download scan artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: runtime-scan-artifact
+          path: downloaded-artifact
+
+      - name: Validate schema and publish structured result
+        id: publish
+        working-directory: trusted-src
+        env:
+          ARTIFACT_PATH: ../downloaded-artifact/normalized-result.json
+          EXPECTED_OWNER: ${{ needs.runtime-scan.outputs.target_owner }}
+          EXPECTED_REPO: ${{ needs.runtime-scan.outputs.target_repo }}
+          EXPECTED_COMMIT: ${{ needs.runtime-scan.outputs.commit_sha }}
+          EXPECTED_SCRIPT: ${{ needs.runtime-scan.outputs.script_path }}
+          OUTPUT_BASE_DIR: ../results-branch
+        run: |
+          npx tsx scripts/publish-runtime-result.ts
+
+      - name: Commit and push runtime results
+        working-directory: results-branch
+        run: |
+          git config user.name "InstallReady Verification Bot"
+          git config user.email "bot@installready.dev"
+          PUBLISHED_FILE="${{ steps.publish.outputs.published_file }}"
+          if [ -z "$PUBLISHED_FILE" ] || [ ! -f "$PUBLISHED_FILE" ]; then
+            echo "Expected published file was not generated: '$PUBLISHED_FILE'"
+            exit 1
+          fi
+
+          # 仅严格暂存受信任发布脚本生成的单一结果文件，绝不执行 git add -A 或添加整个目录
+          git add "$PUBLISHED_FILE"
+          if git diff --staged --quiet; then
+            echo "No changes to commit."
+          else
+            git commit -m "chore(results): publish verification for ${{ needs.runtime-scan.outputs.target_owner_normalized }}/${{ needs.runtime-scan.outputs.target_repo_normalized }}@${{ needs.runtime-scan.outputs.commit_sha }}"
+            git push origin runtime-results
+          fi

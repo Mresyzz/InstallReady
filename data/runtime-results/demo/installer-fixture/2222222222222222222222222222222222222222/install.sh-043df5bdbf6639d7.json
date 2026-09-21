@@ -1,0 +1,51 @@
+{
+  "schema_version": 1,
+  "repository": "demo/installer-fixture",
+  "commit_sha": "2222222222222222222222222222222222222222",
+  "script_path": "install.sh",
+  "verified_at": "2026-09-19T10:05:00.000Z",
+  "engine": {
+    "name": "OpsScript Gate",
+    "version": "0.4.1"
+  },
+  "summary": {
+    "passed": 3,
+    "total": 4,
+    "status": "FAIL",
+    "duration_seconds": 1.45
+  },
+  "results": [
+    {
+      "distro": "debian:12-slim",
+      "status": "PASS",
+      "exit_code": 0,
+      "duration_seconds": 0.44,
+      "diagnostic": "Execution succeeded cleanly."
+    },
+    {
+      "distro": "ubuntu:22.04",
+      "status": "PASS",
+      "exit_code": 0,
+      "duration_seconds": 0.41,
+      "diagnostic": "Execution succeeded cleanly."
+    },
+    {
+      "distro": "ubuntu:24.04",
+      "status": "PASS",
+      "exit_code": 0,
+      "duration_seconds": 0.38,
+      "diagnostic": "Execution succeeded cleanly."
+    },
+    {
+      "distro": "alpine:3.20",
+      "status": "FAIL",
+      "exit_code": 127,
+      "duration_seconds": 0.22,
+      "command_failed": "apt-get install curl",
+      "line_number": 43,
+      "diagnostic": "apt-get: command not found",
+      "remediation_hint": "Alpine normally uses apk instead of apt-get.",
+      "output_snippet": "install.sh: line 43: apt-get: not found"
+    }
+  ]
+}
