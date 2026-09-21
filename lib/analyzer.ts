@@ -17,18 +17,13 @@ export interface StaticAnalysisReport {
 }
 
 /**
- * 确定性检查脚本是否包含常见的多发行版守卫分支。
- * 例如：
- * 1. 同时具备 command -v apt-get 和 command -v apk
- * 2. 检查 /etc/os-release 或 /etc/issue 并带有 case 分支
+ * 确定性检查脚本中是否包含多发行版适配逻辑（仅作为全局参考标记）
  */
-function detectDistroGuards(content: string): boolean {
-  // 检查是否具备 command -v / which / type 对不同包管理器的探测
+export function detectDistroGuards(content: string): boolean {
   const checksApt = /command\s+-v\s+apt(?:-get)?|which\s+apt(?:-get)?|type\s+apt(?:-get)?/i.test(content);
   const checksApk = /command\s+-v\s+apk|which\s+apk|type\s+apk/i.test(content);
   const checksDnfOrYum = /command\s+-v\s+(?:dnf|yum)|which\s+(?:dnf|yum)|type\s+(?:dnf|yum)/i.test(content);
 
-  // 如果脚本显式对 apt 和 apk 都进行了存在性分支检测，则认为具备确定性包管理器守卫
   if (checksApt && checksApk) {
     return true;
   }
@@ -37,7 +32,6 @@ function detectDistroGuards(content: string): boolean {
     return true;
   }
 
-  // 检查基于 /etc/os-release 的发行版检测
   const checksOsRelease = /\/etc\/os-release|\/usr\/lib\/os-release/.test(content);
   const hasCaseOrIfDistro = /(?:case\s+["']?\$?(?:ID|ID_LIKE|NAME)["']?\s+in|if\s+\[\[?\s*"\$?(?:ID|ID_LIKE|NAME)")/.test(content);
   if (checksOsRelease && hasCaseOrIfDistro) {
@@ -45,6 +39,145 @@ function detectDistroGuards(content: string): boolean {
   }
 
   return false;
+}
+
+/**
+ * 分析条件字符串中守卫的包管理器命令
+ */
+function detectBranchGuardsFromCondition(condition: string): Set<string> {
+  const guards = new Set<string>();
+
+  if (
+    /command\s+-v\s+apt(?:-get)?|which\s+apt(?:-get)?|type\s+apt(?:-get)?/i.test(condition) ||
+    /\$?(?:ID|ID_LIKE|NAME)["']?\s*(?:=|==|\*)\s*["']?(?:debian|ubuntu)/i.test(condition)
+  ) {
+    guards.add("apt");
+    guards.add("apt-get");
+    guards.add("dpkg");
+    guards.add("add-apt-repository");
+  }
+
+  if (
+    /command\s+-v\s+apk|which\s+apk|type\s+apk/i.test(condition) ||
+    /\$?(?:ID|ID_LIKE|NAME)["']?\s*(?:=|==|\*)\s*["']?alpine/i.test(condition)
+  ) {
+    guards.add("apk");
+  }
+
+  if (
+    /command\s+-v\s+(?:dnf|yum|rpm)|which\s+(?:dnf|yum|rpm)|type\s+(?:dnf|yum|rpm)/i.test(condition) ||
+    /\$?(?:ID|ID_LIKE|NAME)["']?\s*(?:=|==|\*)\s*["']?(?:fedora|rhel|centos)/i.test(condition)
+  ) {
+    guards.add("dnf");
+    guards.add("yum");
+    guards.add("rpm");
+  }
+
+  if (
+    /command\s+-v\s+pacman|which\s+pacman|type\s+pacman/i.test(condition) ||
+    /\$?(?:ID|ID_LIKE|NAME)["']?\s*(?:=|==|\*)\s*["']?arch/i.test(condition)
+  ) {
+    guards.add("pacman");
+  }
+
+  return guards;
+}
+
+/**
+ * 构建逐行守卫映射表：保守型分支识别。
+ * 仅当命令处于明确对应的 if/elif/case 分支内部时，才豁免该命令的发行版警告。
+ * 文件中其他位置的 command -v 绝不跨行全局抑制警告。
+ */
+export function buildLineGuardMap(lines: string[]): Map<number, Set<string>> {
+  const guardMap = new Map<number, Set<string>>();
+
+  interface Block {
+    type: "if" | "case";
+    currentBranchGuards: Set<string>;
+  }
+  const stack: Block[] = [];
+
+  for (let idx = 0; idx < lines.length; idx++) {
+    const rawLine = lines[idx];
+    const lineNum = idx + 1;
+
+    // 剔除行内注释
+    const trimmed = rawLine.split(/(?<!\\)#/)[0].trim();
+
+    // 单行行内短路守卫：例如 command -v apt-get >/dev/null && apt-get ...
+    const inlineGuards = new Set<string>();
+    if (trimmed) {
+      if (/command\s+-v\s+apt(?:-get)?|which\s+apt(?:-get)?/i.test(trimmed)) {
+        inlineGuards.add("apt");
+        inlineGuards.add("apt-get");
+        inlineGuards.add("dpkg");
+        inlineGuards.add("add-apt-repository");
+      }
+      if (/command\s+-v\s+apk|which\s+apk/i.test(trimmed)) {
+        inlineGuards.add("apk");
+      }
+      if (/command\s+-v\s+(?:dnf|yum)|which\s+(?:dnf|yum)/i.test(trimmed)) {
+        inlineGuards.add("dnf");
+        inlineGuards.add("yum");
+        inlineGuards.add("rpm");
+      }
+      if (/command\s+-v\s+pacman|which\s+pacman/i.test(trimmed)) {
+        inlineGuards.add("pacman");
+      }
+    }
+
+    if (trimmed) {
+      if (/^if\s+/i.test(trimmed)) {
+        const guards = detectBranchGuardsFromCondition(trimmed);
+        stack.push({ type: "if", currentBranchGuards: guards });
+      } else if (/^elif\s+/i.test(trimmed)) {
+        const top = stack[stack.length - 1];
+        if (top && top.type === "if") {
+          top.currentBranchGuards = detectBranchGuardsFromCondition(trimmed);
+        }
+      } else if (/^else\b/i.test(trimmed)) {
+        const top = stack[stack.length - 1];
+        if (top && top.type === "if") {
+          top.currentBranchGuards = new Set<string>();
+        }
+      } else if (/^fi\b/i.test(trimmed)) {
+        if (stack.length > 0 && stack[stack.length - 1].type === "if") {
+          stack.pop();
+        }
+      } else if (/^case\s+.+\s+in\b/i.test(trimmed)) {
+        stack.push({ type: "case", currentBranchGuards: new Set<string>() });
+      } else if (/^esac\b/i.test(trimmed)) {
+        if (stack.length > 0 && stack[stack.length - 1].type === "case") {
+          stack.pop();
+        }
+      } else if (stack.length > 0 && stack[stack.length - 1].type === "case") {
+        const top = stack[stack.length - 1];
+        if (/debian|ubuntu/i.test(trimmed)) {
+          top.currentBranchGuards = new Set(["apt", "apt-get", "dpkg", "add-apt-repository"]);
+        } else if (/alpine/i.test(trimmed)) {
+          top.currentBranchGuards = new Set(["apk"]);
+        } else if (/fedora|rhel|centos/i.test(trimmed)) {
+          top.currentBranchGuards = new Set(["dnf", "yum", "rpm"]);
+        } else if (/arch/i.test(trimmed)) {
+          top.currentBranchGuards = new Set(["pacman"]);
+        } else if (/;;/.test(trimmed)) {
+          top.currentBranchGuards = new Set();
+        }
+      }
+    }
+
+    // 聚合当前代码行的有效守卫集合
+    const lineActiveGuards = new Set<string>(inlineGuards);
+    for (const block of stack) {
+      for (const g of block.currentBranchGuards) {
+        lineActiveGuards.add(g);
+      }
+    }
+
+    guardMap.set(lineNum, lineActiveGuards);
+  }
+
+  return guardMap;
 }
 
 /**
@@ -77,10 +210,11 @@ export function analyzeShellScript(scriptPath: string, content: string): StaticA
   }
 
   const hasGuards = detectDistroGuards(content);
+  const lineGuardMap = buildLineGuardMap(lines);
+
   const findings: Finding[] = [];
   let findingCounter = 0;
 
-  // 针对 Bashism 特性的检查：如果在 #!/bin/sh 下使用了 Bash 专有语法
   const isPosixShebang = shellType === "posix_sh";
 
   lines.forEach((rawLine, index) => {
@@ -89,16 +223,17 @@ export function analyzeShellScript(scriptPath: string, content: string): StaticA
       return;
     }
 
-    // 剔除行内尾部注释
     const codePart = rawLine.split(/(?<!\\)#/)[0].trim();
     if (!codePart) return;
 
-    // 1. 包管理器假设检测（若无多发行版守卫，则直接报错）
-    if (!hasGuards) {
-      // Debian / Ubuntu 独占命令在 Alpine 下不可用
-      const aptMatch = codePart.match(/\b(apt-get|apt|dpkg|add-apt-repository)\b(?:\s+([a-zA-Z0-9_\-]+))?/);
-      if (aptMatch && !isDetectionContext(codePart, aptMatch[1])) {
-        const cmd = aptMatch[1];
+    const guardedOnThisLine = lineGuardMap.get(lineNum) || new Set<string>();
+
+    // 1. 包管理器假设检测（严格执行逐行守卫判断，绝不因其他位置的 command -v 全局豁免）
+    const aptMatch = codePart.match(/\b(apt-get|apt|dpkg|add-apt-repository)\b(?:\s+([a-zA-Z0-9_\-]+))?/);
+    if (aptMatch) {
+      const cmd = aptMatch[1];
+      const isGuarded = guardedOnThisLine.has(cmd) || isDetectionContext(codePart, cmd);
+      if (!isGuarded) {
         findings.push({
           id: `f-${++findingCounter}`,
           kind: "package_manager_assumption",
@@ -110,10 +245,12 @@ export function analyzeShellScript(scriptPath: string, content: string): StaticA
           hint: REMEDIATION_HINTS[cmd] || "Alpine normally uses apk instead of apt-get.",
         });
       }
+    }
 
-      // Alpine 独占命令在 Debian / Ubuntu 下不可用
-      const apkMatch = codePart.match(/\b(apk)\b(?:\s+([a-zA-Z0-9_\-]+))?/);
-      if (apkMatch && !isDetectionContext(codePart, "apk")) {
+    const apkMatch = codePart.match(/\b(apk)\b(?:\s+([a-zA-Z0-9_\-]+))?/);
+    if (apkMatch) {
+      const isGuarded = guardedOnThisLine.has("apk") || isDetectionContext(codePart, "apk");
+      if (!isGuarded) {
         findings.push({
           id: `f-${++findingCounter}`,
           kind: "package_manager_assumption",
@@ -125,11 +262,13 @@ export function analyzeShellScript(scriptPath: string, content: string): StaticA
           hint: REMEDIATION_HINTS["apk"] || "Debian and Ubuntu use apt-get instead of apk.",
         });
       }
+    }
 
-      // RHEL / Fedora 独占命令
-      const dnfMatch = codePart.match(/\b(dnf|yum|rpm)\b/);
-      if (dnfMatch && !isDetectionContext(codePart, dnfMatch[1])) {
-        const cmd = dnfMatch[1];
+    const dnfMatch = codePart.match(/\b(dnf|yum|rpm)\b/);
+    if (dnfMatch) {
+      const cmd = dnfMatch[1];
+      const isGuarded = guardedOnThisLine.has(cmd) || isDetectionContext(codePart, cmd);
+      if (!isGuarded) {
         findings.push({
           id: `f-${++findingCounter}`,
           kind: "package_manager_assumption",
@@ -141,10 +280,12 @@ export function analyzeShellScript(scriptPath: string, content: string): StaticA
           hint: REMEDIATION_HINTS[cmd] || `Use distro-appropriate package manager (apt-get on Debian/Ubuntu, apk on Alpine).`,
         });
       }
+    }
 
-      // Arch Linux 独占命令
-      const pacmanMatch = codePart.match(/\b(pacman)\b/);
-      if (pacmanMatch && !isDetectionContext(codePart, "pacman")) {
+    const pacmanMatch = codePart.match(/\b(pacman)\b/);
+    if (pacmanMatch) {
+      const isGuarded = guardedOnThisLine.has("pacman") || isDetectionContext(codePart, "pacman");
+      if (!isGuarded) {
         findings.push({
           id: `f-${++findingCounter}`,
           kind: "package_manager_assumption",

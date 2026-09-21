@@ -53,8 +53,8 @@ export async function GET(
     });
   }
 
-  // 存在明确 script 与 commit，但未运行真实容器验证：返回静态检查徽章（非绿）
-  const svg = generateInstallReadyBadge({ type: "static_checked" });
+  // v0.1 无持久化静态分析缓存时，诚实返回 not checked 徽章，坚决不虚报 static checked
+  const svg = generateInstallReadyBadge({ type: "not_checked" });
   return new NextResponse(svg, {
     headers: {
       "Content-Type": "image/svg+xml; charset=utf-8",

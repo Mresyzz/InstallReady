@@ -12,7 +12,7 @@ on:
         required: true
         default: 'install.sh'
   schedule:
-    - cron: '0 4 * * 1' # 每周一凌晨自动执行受信任精选集检验
+    - cron: '0 4 * * 1' # 每周一定时触发受信任精选集检验
 
 permissions:
   contents: read
@@ -22,18 +22,70 @@ jobs:
     name: Isolated OpsScript Gate Execution
     runs-on: ubuntu-latest
     permissions:
-      contents: read # 严格只读权限，杜绝泄露写入权
+      contents: read # 严格只读权限，绝不泄露凭据
+    outputs:
+      target_owner: ${{ steps.parse-target.outputs.target_owner }}
+      target_repo: ${{ steps.parse-target.outputs.target_repo }}
+      commit_sha: ${{ steps.target-meta.outputs.commit_sha }}
+      script_path: ${{ steps.parse-target.outputs.script_path }}
 
     steps:
-      - name: Checkout InstallReady tools
+      - name: Checkout InstallReady source
         uses: actions/checkout@v4
         with:
-          persist-credentials: false # 绝对不残留凭证
+          persist-credentials: false # 杜绝凭证持久化
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Parse and validate target against trusted showcase allowlist
+        id: parse-target
+        run: |
+          RAW_INPUT="${{ inputs.target_repo || 'Mresyzz/opsscript-gate' }}"
+          RAW_SCRIPT="${{ inputs.script_path || 'install.sh' }}"
+          
+          # 使用 node 脚本加载 data/showcase.json 进行白名单校验
+          node -e '
+            const fs = require("fs");
+            const rawRepo = process.env.RAW_INPUT.trim();
+            const rawScript = process.env.RAW_SCRIPT.trim();
+            const parts = rawRepo.split("/");
+            if (parts.length !== 2) {
+              console.error("Invalid target_repo format:", rawRepo);
+              process.exit(1);
+            }
+            const [owner, repo] = parts;
+            const showcase = JSON.parse(fs.readFileSync("data/showcase.json", "utf-8"));
+            
+            // 严格核对是否在受信任白名单中
+            const match = showcase.repositories.find(
+              (r) => r.owner.toLowerCase() === owner.toLowerCase() && r.repo.toLowerCase() === repo.toLowerCase()
+            );
+            if (!match) {
+              console.error(`Repository ${rawRepo} is NOT in the showcase allowlist.`);
+              process.exit(1);
+            }
+            if (match.runtimeEnabled !== true && process.env.GITHUB_EVENT_NAME !== "workflow_dispatch") {
+              console.error(`Repository ${rawRepo} is not enabled for scheduled runtime scan.`);
+              process.exit(1);
+            }
+            
+            const fsOut = process.env.GITHUB_OUTPUT;
+            fs.appendFileSync(fsOut, `target_owner=${owner}\n`);
+            fs.appendFileSync(fsOut, `target_repo=${repo}\n`);
+            fs.appendFileSync(fsOut, `target_full_name=${owner}/${repo}\n`);
+            fs.appendFileSync(fsOut, `script_path=${rawScript}\n`);
+          '
+        env:
+          RAW_INPUT: ${{ inputs.target_repo || 'Mresyzz/opsscript-gate' }}
+          RAW_SCRIPT: ${{ inputs.script_path || 'install.sh' }}
 
       - name: Checkout target showcase repository
         uses: actions/checkout@v4
         with:
-          repository: ${{ inputs.target_repo || 'Mresyzz/opsscript-gate' }}
+          repository: ${{ steps.parse-target.outputs.target_full_name }}
           path: target-repo
           persist-credentials: false # 第三方代码环境绝对不保留凭据
 
@@ -42,36 +94,64 @@ jobs:
         working-directory: target-repo
         run: |
           SHA=$(git rev-parse HEAD)
+          if [[ ! "$SHA" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "Invalid commit SHA: $SHA"
+            exit 1
+          fi
           echo "commit_sha=$SHA" >> $GITHUB_OUTPUT
 
-      - name: Run OpsScript Gate Compatibility Gate
-        # 强制绑定全量发布 Commit SHA
-        uses: Mresyzz/opsscript-gate@eb41fd07a3dd641f4a347c6213302ef1b6f6eb71 # v0.4.1
+      - name: Setup Python
+        uses: actions/setup-python@v5
         with:
-          script-path: target-repo/${{ inputs.script_path || 'install.sh' }}
-          shell: auto
-          timeout: 60
-          mem-limit: 256m
-          pids-limit: 128
-          network: none # 默认隔离网络
-          format: json
+          python-version: '3.12'
 
-      - name: Stage output artifact
+      - name: Install OpsScript Gate pinned release commit
+        run: |
+          # 强制绑定不可变全量发布哈希 eb41fd07a3dd641f4a347c6213302ef1b6f6eb71 (v0.4.1)
+          python -m pip install "git+https://github.com/Mresyzz/opsscript-gate.git@eb41fd07a3dd641f4a347c6213302ef1b6f6eb71"
+
+      - name: Execute OpsScript Gate and capture native JSON
         run: |
           mkdir -p staging
-          # 仅收集标准 JSON 输出
-          if [ -f "results.json" ]; then
-            cp results.json staging/raw-result.json
-          else
-            # 如果 CLI 打印到 stdout，将其重定向为规范格式
-            echo "Packaging structured result"
+          set +e
+          # 关键安全/数据清洁：覆盖 GITHUB_ACTIONS=false 阻止写入 GitHub annotation 污染 stdout 结果 JSON
+          GITHUB_ACTIONS=false python -m opsscript_gate.cli run \
+            "target-repo/${{ steps.parse-target.outputs.script_path }}" \
+            --shell auto \
+            --timeout 60 \
+            --mem-limit 256m \
+            --pids-limit 128 \
+            --network none \
+            --format json > staging/opsscript-raw.json
+          OPSSCRIPT_EXIT=$?
+          set -e
+          
+          # OpsScript Gate 规范：0 为全部通过，1 为至少一个发行版失败或报错
+          # 0 和 1 均为有效的兼容性测量结论，必须予以保留并归一化发布
+          if [ $OPSSCRIPT_EXIT -ne 0 ] && [ $OPSSCRIPT_EXIT -ne 1 ]; then
+            echo "OpsScript Gate execution failed with infrastructure error code: $OPSSCRIPT_EXIT"
+            exit $OPSSCRIPT_EXIT
           fi
+
+      - name: Install InstallReady dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Normalize captured JSON into InstallReady envelope
+        env:
+          RAW_JSON_PATH: staging/opsscript-raw.json
+          EXPECTED_OWNER: ${{ steps.parse-target.outputs.target_owner }}
+          EXPECTED_REPO: ${{ steps.parse-target.outputs.target_repo }}
+          EXPECTED_COMMIT: ${{ steps.target-meta.outputs.commit_sha }}
+          EXPECTED_SCRIPT: ${{ steps.parse-target.outputs.script_path }}
+          OUTPUT_PATH: staging/normalized-result.json
+        run: |
+          npx tsx scripts/normalize-opsscript-result.ts
 
       - name: Upload sanitized JSON artifact
         uses: actions/upload-artifact@v4
         with:
           name: runtime-scan-artifact
-          path: staging/
+          path: staging/normalized-result.json
           retention-days: 1
 
   publish-results:
@@ -82,16 +162,36 @@ jobs:
       contents: write # 仅在独立的发布任务中赋予写入权限，且本任务绝不执行外部代码
 
     steps:
-      - name: Checkout InstallReady repository
+      - name: Checkout trusted InstallReady source code
         uses: actions/checkout@v4
         with:
-          ref: runtime-results
-          persist-credentials: true
+          path: trusted-src
+          persist-credentials: false
+
+      - name: Checkout or initialize runtime-results branch
+        run: |
+          git clone "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git" results-branch
+          cd results-branch
+          git fetch origin runtime-results:runtime-results || true
+          if git show-ref --verify --quiet refs/heads/runtime-results; then
+            git checkout runtime-results
+          else
+            echo "Initializing orphan runtime-results branch..."
+            git checkout --orphan runtime-results
+            git rm -rf . || true
+            echo "# InstallReady Runtime Verification Results" > README.md
+            git add README.md
+            git -c user.name="InstallReady Bot" -c user.email="bot@installready.dev" commit -m "chore: initialize runtime-results branch"
+          fi
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 22
+
+      - name: Install dependencies in trusted-src
+        working-directory: trusted-src
+        run: npm ci --ignore-scripts
 
       - name: Download scan artifact
         uses: actions/download-artifact@v4
@@ -100,25 +200,33 @@ jobs:
           path: downloaded-artifact
 
       - name: Validate schema and publish structured result
+        working-directory: trusted-src
         env:
-          ARTIFACT_PATH: downloaded-artifact/raw-result.json
-          EXPECTED_OWNER: ${{ github.repository_owner }}
-          EXPECTED_REPO: 'InstallReady'
+          ARTIFACT_PATH: ../downloaded-artifact/normalized-result.json
+          EXPECTED_OWNER: ${{ needs.runtime-scan.outputs.target_owner }}
+          EXPECTED_REPO: ${{ needs.runtime-scan.outputs.target_repo }}
           EXPECTED_COMMIT: ${{ needs.runtime-scan.outputs.commit_sha }}
-          EXPECTED_SCRIPT: ${{ inputs.script_path || 'install.sh' }}
-          OUTPUT_BASE_DIR: ./
+          EXPECTED_SCRIPT: ${{ needs.runtime-scan.outputs.script_path }}
+          OUTPUT_BASE_DIR: ../results-branch
         run: |
-          # 仅执行受信任的发布脚本，绝不运行任何构件内的脚本或命令
-          node scripts/publish-runtime-result.mjs
+          # 仅在受信任的代码目录中运行发布校验脚本
+          npx tsx scripts/publish-runtime-result.ts
 
       - name: Commit and push runtime results
+        working-directory: results-branch
         run: |
           git config user.name "InstallReady Verification Bot"
           git config user.email "bot@installready.dev"
-          git add -A
-          if git diff --staged --quiet; then
-            echo "No changes to commit."
+          TARGET_DIR="${{ needs.runtime-scan.outputs.target_owner }}"
+          if [ -d "$TARGET_DIR" ]; then
+            git add "$TARGET_DIR"
+            if git diff --staged --quiet; then
+              echo "No changes to commit."
+            else
+              git commit -m "chore(results): publish verification for ${{ needs.runtime-scan.outputs.target_owner }}/${{ needs.runtime-scan.outputs.target_repo }}@${{ needs.runtime-scan.outputs.commit_sha }}"
+              git push origin runtime-results
+            fi
           else
-            git commit -m "chore(results): update runtime verification for ${{ inputs.target_repo || 'showcase' }}"
-            git push origin runtime-results
+            echo "Target output directory $TARGET_DIR was not found."
+            exit 1
           fi

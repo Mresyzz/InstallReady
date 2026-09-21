@@ -13,7 +13,9 @@ export function FindingCard({
   staticFindings,
   runtimeResults,
 }: FindingCardProps) {
-  const runtimeFailures = (runtimeResults || []).filter((r) => r.status === "FAIL" || r.status === "ERROR");
+  const runtimeFailures = (runtimeResults || []).filter(
+    (r) => r.status === "FAIL" || r.status === "ERROR" || r.status === "TIMED_OUT"
+  );
 
   if (runtimeFailures.length === 0 && staticFindings.length === 0) {
     return (
@@ -50,9 +52,17 @@ export function FindingCard({
         >
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2">
-              <span className="inline-flex items-center gap-1 text-xs font-bold font-mono px-2 py-0.5 rounded bg-rose-500/20 text-rose-500 border border-rose-500/30">
+              <span
+                className={`inline-flex items-center gap-1 text-xs font-bold font-mono px-2 py-0.5 rounded border ${
+                  failure.status === "TIMED_OUT"
+                    ? "bg-amber-500/20 text-amber-500 border-amber-500/30"
+                    : failure.status === "ERROR"
+                    ? "bg-purple-500/20 text-purple-500 border-purple-500/30"
+                    : "bg-rose-500/20 text-rose-500 border-rose-500/30"
+                }`}
+              >
                 <AlertCircle className="h-3.5 w-3.5" />
-                FAIL
+                {failure.status}
               </span>
               <span className="text-sm font-bold text-foreground">{failure.distro}</span>
             </div>

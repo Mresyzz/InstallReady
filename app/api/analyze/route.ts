@@ -7,7 +7,11 @@ import {
   fetchScriptContent,
   GitHubApiError,
 } from "@/lib/github";
-import { discoverInstallerScripts, HIGH_CONFIDENCE_FALLBACK_PATHS } from "@/lib/discovery";
+import {
+  discoverInstallerScripts,
+  HIGH_CONFIDENCE_FALLBACK_PATHS,
+  mergeFallbackCandidates,
+} from "@/lib/discovery";
 import { analyzeShellScript } from "@/lib/analyzer";
 import { getRuntimeVerificationResult } from "@/lib/runtime-results";
 
@@ -53,24 +57,30 @@ export async function POST(req: NextRequest) {
 
     // 4. 获取 Git 树与发现安装脚本（感知截断）
     const { items: treeItems, truncated } = await fetchCommitTree(owner, repo, commitSha);
-    const discovery = discoverInstallerScripts(treeItems, truncated);
+    let discovery = discoverInstallerScripts(treeItems, truncated);
 
-    // 如果截断且未直接发现脚本，尝试检测预置的高置信保底路径
-    if (discovery.candidates.length === 0 && truncated) {
+    // 当 Git 树截断时，始终执行高置信保底探测，防止顶级 install.sh 被截断漏掉
+    if (truncated) {
+      const fallbackFound: Array<{ path: string; size?: number }> = [];
+      const existingPaths = new Set(discovery.candidates.map((c) => c.path));
+
       for (const fallbackPath of HIGH_CONFIDENCE_FALLBACK_PATHS) {
+        if (existingPaths.has(fallbackPath)) continue;
         try {
           const checkRes = await fetchScriptContent(owner, repo, commitSha, fallbackPath);
           if (checkRes.content) {
-            discovery.candidates.push({
+            fallbackFound.push({
               path: fallbackPath,
-              priority: 80,
-              isPrimaryCandidate: true,
               size: checkRes.size,
             });
           }
         } catch {
-          // 保底路径不存在，继续下一个
+          // 保底路径不存在，继续
         }
+      }
+
+      if (fallbackFound.length > 0) {
+        discovery = mergeFallbackCandidates(discovery.candidates, fallbackFound, true);
       }
     }
 

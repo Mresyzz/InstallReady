@@ -3,33 +3,16 @@
 > **Does this repo actually install cleanly on Linux?**
 
 [![CI](https://github.com/Mresyzz/InstallReady/actions/workflows/ci.yml/badge.svg)](https://github.com/Mresyzz/InstallReady/actions/workflows/ci.yml)
-[![InstallReady Status](https://img.shields.io/badge/Linux%20install-4%2F4%20passing-2da44e?logo=linux)](https://github.com/Mresyzz/InstallReady)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 **InstallReady** checks Linux installer and bootstrap scripts (`install.sh`, `setup.sh`, `bootstrap.sh`) across Debian, Ubuntu, and Alpine before users discover the breakage for you.
 
 ---
 
-## 🎯 Example Result
+## 🎯 Illustrative Output (Demo Fixture)
 
 ```text
-Mresyzz/opsscript-gate
-install.sh (commit eb41fd07...)
-
-Linux Install Compatibility — 4 / 4 Runtime Verified
-
-Debian 12        ✅ PASS  (0.42s)
-Ubuntu 22.04     ✅ PASS  (0.38s)
-Ubuntu 24.04     ✅ PASS  (0.35s)
-Alpine 3.20      ✅ PASS  (0.19s)
-
-Verified with OpsScript Gate v0.4.1.
-```
-
-Or when an Alpine incompatibility is detected:
-
-```text
-demo/installer-fixture
+demo/installer-fixture (Demo fixture)
 install.sh (commit 22222222...)
 
 Linux Install Compatibility — 3 / 4 Runtime Verified
@@ -47,6 +30,19 @@ Suggested fix:
 Alpine normally uses apk instead of apt-get.
 ```
 
+Or for a portable installer:
+
+```text
+demo/portable-fixture (Illustrative output)
+install.sh
+
+Static Analysis Review:
+Debian 12        Likely compatible
+Ubuntu 22.04     Likely compatible
+Ubuntu 24.04     Likely compatible
+Alpine 3.20      Likely compatible
+```
+
 ---
 
 ## 💡 What It Does
@@ -57,14 +53,14 @@ InstallReady operates on a strict two-level model:
    - Works immediately on any public GitHub repository.
    - Inspects the repository tree for likely installer scripts.
    - Identifies package-manager assumptions (`apt-get`, `apk`, `dnf`, `pacman`), bashisms, and service managers.
-   - Features deterministic guard detection (`command -v apt-get` vs `command -v apk`) to avoid false alarms.
-   - Clearly labeled: **Likely compatible**, **Potential issue**, or **Unknown**. *Never uses PASS.*
+   - Features deterministic branch-aware guard detection (`if command -v apt-get ... elif command -v apk`) to prevent false positives while flagging unconditional commands.
+   - Statuses: **Likely compatible**, **Potential issue**, or **Unknown**. *Never uses PASS or green badges for static analysis.*
 
 2. **Level 2 — Runtime Verification**:
    - Powered by [OpsScript Gate](https://github.com/Mresyzz/opsscript-gate) (`Mresyzz/opsscript-gate@v0.4.1`).
    - Executes scripts inside isolated, unprivileged Debian, Ubuntu, and Alpine containers in GitHub Actions.
-   - Records true runtime exit codes, command-level breakages, and line numbers.
-   - Labeled: **PASS**, **FAIL**, or **ERROR**.
+   - Records true runtime exit codes, command-level breakages, line numbers, and timeouts.
+   - Statuses: **PASS**, **FAIL**, **ERROR**, or **TIMED_OUT**.
 
 ---
 

@@ -71,28 +71,69 @@ echo "\${arr[0]}"`;
     expect(bashFinding?.affected_distros).toContain("alpine:3.20");
   });
 
-  // Fixture E: distro detection guard (AVOIDING FALSE POSITIVES)
-  it("Fixture E: distro detection avoids naive apt-get false positives", () => {
+  // Case A: guarded branches do NOT warn
+  it("Case A: guarded branches do NOT warn on package manager assumptions", () => {
     const script = `#!/bin/sh
 if command -v apt-get >/dev/null 2>&1; then
   apt-get update && apt-get install -y curl
 elif command -v apk >/dev/null 2>&1; then
   apk add curl
 else
-  echo "Unknown package manager"
+  echo "Unsupported OS"
   exit 1
 fi`;
 
     const report = analyzeShellScript("install.sh", script);
-    expect(report.hasDistroGuards).toBe(true);
-
-    // 绝不因包含 apt-get 或 apk 而产生错误的跨发行版不兼容性警告
     const warnings = report.findings.filter((f) => f.kind === "package_manager_assumption");
     expect(warnings.length).toBe(0);
 
     for (const status of report.distroCompatibility) {
       expect(status.status).toBe("Likely compatible");
     }
+  });
+
+  // Case B: unconditional apt-get after detection DOES warn
+  it("Case B: unconditional apt-get after detection DOES warn", () => {
+    const script = `#!/bin/sh
+if command -v brew >/dev/null 2>&1; then
+  brew install curl
+fi
+apt-get install -y curl`;
+
+    const report = analyzeShellScript("install.sh", script);
+    const aptFinding = report.findings.find((f) => f.command.includes("apt-get"));
+    expect(aptFinding).toBeDefined();
+    expect(aptFinding?.line).toBe(5);
+    expect(aptFinding?.affected_distros).toContain("alpine:3.20");
+  });
+
+  // Case C: commented-out guards do NOT protect unconditional commands
+  it("Case C: commented-out guards do NOT protect unconditional commands", () => {
+    const script = `#!/bin/sh
+# if command -v apt-get >/dev/null 2>&1; then
+apt-get update
+# fi`;
+
+    const report = analyzeShellScript("install.sh", script);
+    const aptFinding = report.findings.find((f) => f.command.includes("apt-get"));
+    expect(aptFinding).toBeDefined();
+    expect(aptFinding?.line).toBe(3);
+    expect(aptFinding?.affected_distros).toContain("alpine:3.20");
+  });
+
+  // Case D: unrelated guard elsewhere in file does NOT protect unconditional distro-specific commands
+  it("Case D: unrelated guard elsewhere in file does NOT protect unconditional distro commands", () => {
+    const script = `#!/bin/sh
+if [ -f /etc/os-release ]; then
+  echo "Linux detected"
+fi
+apt-get update`;
+
+    const report = analyzeShellScript("install.sh", script);
+    const aptFinding = report.findings.find((f) => f.command.includes("apt-get"));
+    expect(aptFinding).toBeDefined();
+    expect(aptFinding?.line).toBe(5);
+    expect(aptFinding?.affected_distros).toContain("alpine:3.20");
   });
 
   it("detects systemctl usage inside minimal containers", () => {

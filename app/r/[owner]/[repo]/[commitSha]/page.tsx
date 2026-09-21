@@ -7,7 +7,11 @@ import {
   fetchScriptContent,
   GitHubApiError,
 } from "@/lib/github";
-import { discoverInstallerScripts, HIGH_CONFIDENCE_FALLBACK_PATHS } from "@/lib/discovery";
+import {
+  discoverInstallerScripts,
+  HIGH_CONFIDENCE_FALLBACK_PATHS,
+  mergeFallbackCandidates,
+} from "@/lib/discovery";
 import { analyzeShellScript } from "@/lib/analyzer";
 import { getRuntimeVerificationResult } from "@/lib/runtime-results";
 import { ResultView } from "@/components/result-view";
@@ -57,24 +61,30 @@ export default async function CommitPinnedResultPage({ params, searchParams }: P
   try {
     const metadata = await fetchRepoMetadata(urlVal.owner, urlVal.repo);
     const { items: treeItems, truncated } = await fetchCommitTree(urlVal.owner, urlVal.repo, commitSha);
-    const discovery = discoverInstallerScripts(treeItems, truncated);
+    let discovery = discoverInstallerScripts(treeItems, truncated);
 
-    // 针对截断仓库尝试保底检查
-    if (discovery.candidates.length === 0 && truncated) {
+    // 针对截断仓库始终执行高置信保底探测
+    if (truncated) {
+      const fallbackFound: Array<{ path: string; size?: number }> = [];
+      const existingPaths = new Set(discovery.candidates.map((c) => c.path));
+
       for (const fallbackPath of HIGH_CONFIDENCE_FALLBACK_PATHS) {
+        if (existingPaths.has(fallbackPath)) continue;
         try {
           const checkRes = await fetchScriptContent(urlVal.owner, urlVal.repo, commitSha, fallbackPath);
           if (checkRes.content) {
-            discovery.candidates.push({
+            fallbackFound.push({
               path: fallbackPath,
-              priority: 80,
-              isPrimaryCandidate: true,
               size: checkRes.size,
             });
           }
         } catch {
           // ignore
         }
+      }
+
+      if (fallbackFound.length > 0) {
+        discovery = mergeFallbackCandidates(discovery.candidates, fallbackFound, true);
       }
     }
 

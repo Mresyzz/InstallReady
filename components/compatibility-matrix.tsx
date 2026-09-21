@@ -58,6 +58,7 @@ export function CompatibilityMatrix({
           if (isRuntimeVerified && runtimeItem) {
             const isPass = runtimeItem.status === "PASS";
             const isFail = runtimeItem.status === "FAIL";
+            const isTimedOut = runtimeItem.status === "TIMED_OUT";
 
             return (
               <div
@@ -65,16 +66,19 @@ export function CompatibilityMatrix({
                 className={`relative p-4 rounded-xl border transition-all ${
                   isPass
                     ? "bg-emerald-500/[0.03] border-emerald-500/30 dark:border-emerald-500/20"
+                    : isTimedOut
+                    ? "bg-amber-500/[0.04] border-amber-500/40 dark:border-amber-500/30"
                     : isFail
                     ? "bg-rose-500/[0.04] border-rose-500/40 dark:border-rose-500/30"
-                    : "bg-amber-500/[0.04] border-amber-500/30"
+                    : "bg-purple-500/[0.04] border-purple-500/30"
                 }`}
               >
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-xs font-mono text-muted-foreground">{target.id}</span>
                   {isPass && <CheckCircle2 className="h-4 w-4 text-emerald-500" />}
+                  {isTimedOut && <AlertTriangle className="h-4 w-4 text-amber-500" />}
                   {isFail && <XCircle className="h-4 w-4 text-rose-500" />}
-                  {!isPass && !isFail && <AlertTriangle className="h-4 w-4 text-amber-500" />}
+                  {!isPass && !isFail && !isTimedOut && <AlertTriangle className="h-4 w-4 text-purple-500" />}
                 </div>
 
                 <div className="text-sm font-semibold text-foreground mb-1">{target.displayName}</div>
@@ -82,7 +86,13 @@ export function CompatibilityMatrix({
                 <div className="flex items-baseline justify-between pt-2 border-t border-border/50 text-xs font-mono">
                   <span
                     className={`font-bold ${
-                      isPass ? "text-emerald-500" : isFail ? "text-rose-500" : "text-amber-500"
+                      isPass
+                        ? "text-emerald-500"
+                        : isTimedOut
+                        ? "text-amber-500"
+                        : isFail
+                        ? "text-rose-500"
+                        : "text-purple-500"
                     }`}
                   >
                     {runtimeItem.status}

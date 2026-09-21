@@ -29,7 +29,8 @@
       "defaultScript": "install.sh",
       "description": "Zero-config Linux runtime compatibility gate for shell scripts.",
       "featured": true,
-      "verificationType": "runtime_verified"
+      "verificationType": "static_only",
+      "runtimeEnabled": false
     },
     {
       "owner": "nvm-sh",
@@ -38,7 +39,8 @@
       "defaultScript": "install.sh",
       "description": "Node Version Manager - POSIX-compliant bash script to manage multiple active node.js versions.",
       "featured": true,
-      "verificationType": "static_only"
+      "verificationType": "static_only",
+      "runtimeEnabled": false
     },
     {
       "owner": "pyenv",
@@ -47,7 +49,8 @@
       "defaultScript": "bin/pyenv-installer",
       "description": "This tool is used to install pyenv and its plugins.",
       "featured": true,
-      "verificationType": "static_only"
+      "verificationType": "static_only",
+      "runtimeEnabled": false
     },
     {
       "owner": "docker",
@@ -56,7 +59,8 @@
       "defaultScript": "install.sh",
       "description": "Docker convenience install script.",
       "featured": true,
-      "verificationType": "static_only"
+      "verificationType": "static_only",
+      "runtimeEnabled": false
     },
     {
       "owner": "ohmyzsh",
@@ -65,7 +69,8 @@
       "defaultScript": "tools/install.sh",
       "description": "A delightful community-driven framework for managing your zsh configuration.",
       "featured": true,
-      "verificationType": "static_only"
+      "verificationType": "static_only",
+      "runtimeEnabled": false
     }
   ],
   "aiCodingVertical": [

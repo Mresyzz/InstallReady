@@ -136,3 +136,51 @@ export function discoverInstallerScripts(
     warning,
   };
 }
+
+/**
+ * 当 GitHub 树被截断时，将保底探测发现的高置信脚本合并并去重
+ */
+export function mergeFallbackCandidates(
+  treeCandidates: DiscoveredScript[],
+  fallbackFound: Array<{ path: string; size?: number }>,
+  isTruncated: boolean = true
+): DiscoveryResult {
+  const map = new Map<string, DiscoveredScript>();
+
+  // 先载入树发现的候选文件
+  for (const c of treeCandidates) {
+    map.set(c.path, c);
+  }
+
+  // 合并保底探测到的文件
+  for (const f of fallbackFound) {
+    const validation = validateRepositoryPath(f.path);
+    if (!validation.valid || !validation.normalizedPath) continue;
+    const safePath = validation.normalizedPath;
+
+    if (!map.has(safePath)) {
+      const score = calculateInstallerScore(safePath);
+      map.set(safePath, {
+        path: safePath,
+        priority: score,
+        isPrimaryCandidate: score >= 80,
+        size: f.size,
+      });
+    }
+  }
+
+  const merged = Array.from(map.values());
+  // 重新按置信度排序
+  merged.sort((a, b) => b.priority - a.priority || a.path.localeCompare(b.path));
+  const bounded = merged.slice(0, 100);
+
+  return {
+    candidates: bounded,
+    isPartialScan: isTruncated,
+    totalTreeFiles: treeCandidates.length,
+    inspectedCount: bounded.length,
+    warning: isTruncated
+      ? "Large repository: only high-confidence installer locations were inspected."
+      : undefined,
+  };
+}

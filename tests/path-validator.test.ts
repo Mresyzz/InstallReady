@@ -70,6 +70,12 @@ describe("Collision-Resistant Script Slug Generation", () => {
     expect(filename3).toMatch(/^install\.sh-[0-9a-f]{16}\.json$/);
   });
 
+  it("proves distinct paths with inverted parts cannot collide or overwrite each other", () => {
+    const f1 = generateScriptResultFilename("scripts/install.sh");
+    const f2 = generateScriptResultFilename("install/scripts.sh");
+    expect(f1).not.toBe(f2);
+  });
+
   it("produces deterministic filenames for identical paths", () => {
     const f1 = generateScriptSlug("scripts/bootstrap.sh");
     const f2 = generateScriptSlug("scripts/bootstrap.sh");

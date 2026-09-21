@@ -1,5 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { escapeXml, generateInstallReadyBadge } from "../lib/badge";
+import { GET } from "../app/api/badges/[owner]/[repo]/route";
+import { NextRequest } from "next/server";
 
 describe("SVG Badge Generation & XML Security Boundary", () => {
   it("strictly XML-escapes untrusted dynamic inputs", () => {
@@ -45,6 +47,38 @@ describe("SVG Badge Generation & XML Security Boundary", () => {
     });
     expect(svg).toContain("3/4 passing");
     expect(svg).toContain("#cf222e"); // 红色
+    expect(svg).not.toContain("#2da44e");
+  });
+});
+
+describe("Badge API Route (/api/badges/[owner]/[repo])", () => {
+  it("returns not_checked badge when no runtime verification data exists", async () => {
+    const req = new NextRequest("http://localhost:3000/api/badges/unverified-org/unknown-repo");
+    const context = {
+      params: Promise.resolve({ owner: "unverified-org", repo: "unknown-repo" }),
+    };
+
+    const res = await GET(req, context);
+    expect(res.status).toBe(200);
+    expect(res.headers.get("Content-Type")).toContain("image/svg+xml");
+    const svg = await res.text();
+    expect(svg).toContain("not checked");
+    expect(svg).not.toContain("4/4 passing");
+    expect(svg).not.toContain("#2da44e");
+  });
+
+  it("returns not_checked badge even when query parameters are supplied if no file exists", async () => {
+    const req = new NextRequest(
+      "http://localhost:3000/api/badges/test-owner/test-repo?commit=0123456789abcdef0123456789abcdef01234567&script=install.sh"
+    );
+    const context = {
+      params: Promise.resolve({ owner: "test-owner", repo: "test-repo" }),
+    };
+
+    const res = await GET(req, context);
+    expect(res.status).toBe(200);
+    const svg = await res.text();
+    expect(svg).toContain("not checked");
     expect(svg).not.toContain("#2da44e");
   });
 });

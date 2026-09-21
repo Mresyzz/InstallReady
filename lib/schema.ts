@@ -10,11 +10,13 @@ export const ALLOWED_DISTROS = [
   "alpine:3.20",
 ] as const;
 
-export const RUNTIME_STATUS_ENUM = ["PASS", "FAIL", "ERROR"] as const;
+export const RUNTIME_STATUS_ENUM = ["PASS", "FAIL", "TIMED_OUT", "ERROR"] as const;
 export type RuntimeStatus = (typeof RUNTIME_STATUS_ENUM)[number];
 
+export const ALLOWED_ENGINE_VERSIONS = ["0.4.1"] as const;
+
 export const DistroResultSchema = z.object({
-  distro: z.string().max(64),
+  distro: z.enum(ALLOWED_DISTROS),
   status: z.enum(RUNTIME_STATUS_ENUM),
   exit_code: z.number().int().min(0).max(255),
   duration_seconds: z.number().min(0).max(600),
@@ -27,28 +29,58 @@ export const DistroResultSchema = z.object({
 
 export type DistroResult = z.infer<typeof DistroResultSchema>;
 
-export const OpsScriptGateResultSchema = z.object({
-  schema_version: z.literal(1),
-  repository: z.string().max(150),
-  commit_sha: z.string().refine(validateFullCommitSha, {
-    message: "commit_sha must be a full 40-character hex string",
-  }),
-  script_path: z.string().max(255).refine((p) => validateRepositoryPath(p).valid, {
-    message: "script_path must be a safe repository-relative path",
-  }),
-  verified_at: z.string().datetime(),
-  engine: z.object({
-    name: z.literal("OpsScript Gate"),
-    version: z.string().max(32),
-  }),
-  summary: z.object({
-    passed: z.number().int().min(0),
-    total: z.number().int().min(1),
-    status: z.enum(RUNTIME_STATUS_ENUM),
-    duration_seconds: z.number().min(0).max(3600).optional(),
-  }),
-  results: z.array(DistroResultSchema).min(1).max(20),
-});
+export const OpsScriptGateResultSchema = z
+  .object({
+    schema_version: z.literal(1),
+    repository: z.string().max(150),
+    commit_sha: z.string().refine(validateFullCommitSha, {
+      message: "commit_sha must be a full 40-character hex string",
+    }),
+    script_path: z.string().max(255).refine((p) => validateRepositoryPath(p).valid, {
+      message: "script_path must be a safe repository-relative path",
+    }),
+    verified_at: z.string().datetime(),
+    engine: z.object({
+      name: z.literal("OpsScript Gate"),
+      version: z.enum(ALLOWED_ENGINE_VERSIONS),
+    }),
+    summary: z.object({
+      passed: z.number().int().min(0),
+      total: z.number().int().min(1),
+      status: z.enum(RUNTIME_STATUS_ENUM),
+      duration_seconds: z.number().min(0).max(3600).optional(),
+    }),
+    results: z.array(DistroResultSchema).min(1).max(20),
+  })
+  .refine(
+    (data) => {
+      const distros = data.results.map((r) => r.distro);
+      return new Set(distros).size === distros.length;
+    },
+    { message: "Duplicate distro entries found in results" }
+  )
+  .refine((data) => data.summary.total === data.results.length, {
+    message: "summary.total must equal the number of entries in results",
+  })
+  .refine(
+    (data) => {
+      const actualPassed = data.results.filter((r) => r.status === "PASS").length;
+      return data.summary.passed === actualPassed;
+    },
+    { message: "summary.passed must equal the exact count of results with status 'PASS'" }
+  )
+  .refine((data) => data.summary.passed <= data.summary.total, {
+    message: "summary.passed cannot exceed summary.total",
+  })
+  .refine(
+    (data) => {
+      const hasFailures = data.results.some((r) => r.status !== "PASS");
+      if (!hasFailures && data.summary.status !== "PASS") return false;
+      if (hasFailures && data.summary.status === "PASS") return false;
+      return true;
+    },
+    { message: "summary.status is inconsistent with results status" }
+  );
 
 export type OpsScriptGateResult = z.infer<typeof OpsScriptGateResultSchema>;
 

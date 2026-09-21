@@ -6,7 +6,7 @@ import { parseAndValidateGitHubUrl } from "@/lib/repo-url";
 import { ArrowRight, Loader2, AlertCircle, Sparkles } from "lucide-react";
 
 const EXAMPLE_REPOS = [
-  { label: "OpsScript Gate", value: "https://github.com/Mresyzz/opsscript-gate", badge: "Verified" },
+  { label: "OpsScript Gate", value: "https://github.com/Mresyzz/opsscript-gate", badge: "Engine" },
   { label: "Fixture (Alpine Fail)", value: "demo/installer-fixture", badge: "Demo" },
   { label: "NVM", value: "https://github.com/nvm-sh/nvm", badge: "Popular" },
 ];
