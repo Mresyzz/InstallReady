@@ -28,6 +28,9 @@ export default function HomePage() {
           <p className="text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed">
             Check installer scripts across Debian, Ubuntu, and Alpine before users find the breakage for you.
           </p>
+          <p className="text-xs text-muted-foreground max-w-xl mx-auto">
+            Deterministic shell rules, pinned Git commits, and optional GitHub Actions checks. No AI model or code execution is involved in the web scan.
+          </p>
         </div>
 
         {/* 核心输入框 */}
