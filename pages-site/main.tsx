@@ -38,7 +38,7 @@ function App() {
   const [scan, setScan] = useState<Scan | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
-  const review = async () => { setBusy(true); setError(""); setScan(null); try { setScan(await scanRepository(input)); } catch (e) { setError(e instanceof Error ? e.message : "Scan failed."); } finally { setBusy(false); } };
+  const review = async () => { setBusy(true); setError(""); setScan(null); try { const result = await scanRepository(input); setScan(result); history.replaceState(null, "", `?repo=${encodeURIComponent(`${result.owner}/${result.repo}`)}`); } catch (e) { setError(e instanceof Error ? e.message : "Scan failed."); } finally { setBusy(false); } };
   const workflow = scan ? generateGitHubActionWorkflow(scan.script) : "";
   const report = scan ? generateReportMarkdown(scan.report, { repository: `${scan.owner}/${scan.repo}`, commitSha: scan.sha, sourceUrl: `https://github.com/${scan.owner}/${scan.repo}/blob/${scan.sha}/${scan.script}` }) : "";
   const copy = async (text: string) => { await navigator.clipboard.writeText(text); };
