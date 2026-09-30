@@ -5,7 +5,7 @@
 [![CI](https://github.com/Mresyzz/InstallReady/actions/workflows/ci.yml/badge.svg)](https://github.com/Mresyzz/InstallReady/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-[Try InstallReady online](https://installready.mresy.chatgpt.site) · [Run it locally](#-local-development)
+[Try InstallReady on GitHub Pages](https://mresyzz.github.io/InstallReady/) · [Run it locally](#-local-development)
 
 **InstallReady** checks Linux installer and bootstrap scripts (`install.sh`, `setup.sh`, `bootstrap.sh`) across Debian, Ubuntu, and Alpine before users discover the breakage for you.
 
@@ -174,7 +174,15 @@ npm run build
 
 ## 📦 Deployment
 
-InstallReady is built with Next.js App Router and is fully deployable to **Vercel** or any standard Node.js serverless platform:
+The public demo is also deployable to **GitHub Pages**. The Pages build is a browser-only version: it reads
+public GitHub metadata and files, runs the same deterministic static rules, and generates the Actions workflow
+locally in the browser. It does not need a server token. GitHub Pages cannot host the optional server API or
+runtime verification itself, so runtime checks still run in each user's GitHub Actions workflow.
+
+After enabling GitHub Pages with **GitHub Actions** as the source, pushes to `main` publish the site through
+`.github/workflows/pages.yml`.
+
+The original Next.js application remains deployable to **Vercel** or any standard Node.js serverless platform:
 
 ```bash
 # Environment variables (Optional)
