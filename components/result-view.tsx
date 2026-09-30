@@ -22,6 +22,8 @@ import { ScriptPicker } from "./script-picker";
 import { FindingCard } from "./finding-card";
 import { WorkflowGenerator } from "./workflow-generator";
 import { BadgeGenerator } from "./badge-generator";
+import { ReportExport } from "./report-export";
+import { generateReportMarkdown } from "@/lib/report-markdown";
 
 interface ResultViewProps {
   metadata: RepoMetadata;
@@ -222,7 +224,12 @@ export function ResultView({
       />
 
       {/* 一键集成工作流生成器 */}
-      <WorkflowGenerator scriptPath={selectedScript} />
+      <WorkflowGenerator scriptPath={selectedScript} repository={metadata} />
+
+      <ReportExport markdown={generateReportMarkdown(staticReport, {
+        repository: metadata.fullName, commitSha, runtimeResult,
+        sourceUrl: `https://github.com/${metadata.owner}/${metadata.repo}/blob/${commitSha}/${selectedScript}`,
+      })} />
 
       {/* 徽章生成器 */}
       <BadgeGenerator
@@ -245,7 +252,7 @@ export function ResultView({
             rel="noreferrer"
             className="text-foreground underline decoration-zinc-500 underline-offset-2 hover:text-blue-500 font-bold"
           >
-            OpsScript Gate v0.4.1
+            OpsScript Gate
           </a>
         </div>
         <p className="text-[11px] text-zinc-500">

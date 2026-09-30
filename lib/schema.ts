@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { validateFullCommitSha } from "./repo-url";
 import { validateRepositoryPath } from "./path-validator";
+import { ENGINE_VERSION } from "./engine";
 
 export const ALLOWED_DISTROS = [
   "debian:12-slim",
@@ -13,7 +14,8 @@ export const ALLOWED_DISTROS = [
 export const RUNTIME_STATUS_ENUM = ["PASS", "FAIL", "TIMED_OUT", "ERROR"] as const;
 export type RuntimeStatus = (typeof RUNTIME_STATUS_ENUM)[number];
 
-export const ALLOWED_ENGINE_VERSIONS = ["0.4.1"] as const;
+// Keep historical artifacts readable while making the current generator version explicit.
+export const ALLOWED_ENGINE_VERSIONS = ["0.4.1", "0.5.1", ENGINE_VERSION] as const;
 
 export const DistroResultSchema = z.object({
   distro: z.enum(ALLOWED_DISTROS),

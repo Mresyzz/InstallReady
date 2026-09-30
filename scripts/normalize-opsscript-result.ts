@@ -1,4 +1,5 @@
 import fs from "fs";
+import { ENGINE_VERSION } from "../lib/engine";
 import { OpsScriptGateResultSchema, OpsScriptGateResult, RuntimeStatus, ALLOWED_DISTROS } from "../lib/schema";
 
 export interface TrustedNormalizationMetadata {
@@ -35,7 +36,7 @@ export interface NativeOpsScriptPayload {
 }
 
 /**
- * 将 OpsScript Gate v0.4.1 原生 JSON 转换为 InstallReady 标准信封格式
+ * Convert the pinned runtime engine's JSON to the InstallReady envelope.
  */
 export function normalizeOpsScriptGateJson(
   nativeData: unknown,
@@ -115,7 +116,7 @@ export function normalizeOpsScriptGateJson(
     verified_at: meta.verifiedAt || new Date().toISOString(),
     engine: {
       name: "OpsScript Gate" as const,
-      version: "0.4.1" as const,
+      version: ENGINE_VERSION,
     },
     summary: {
       passed,

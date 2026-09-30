@@ -78,8 +78,8 @@ jobs:
 
       - name: Install OpsScript Gate pinned release commit
         run: |
-          # 强制绑定不可变全量发布哈希 eb41fd07a3dd641f4a347c6213302ef1b6f6eb71 (v0.4.1)
-          python -m pip install "git+https://github.com/Mresyzz/opsscript-gate.git@eb41fd07a3dd641f4a347c6213302ef1b6f6eb71"
+          # OpsScript Gate v0.6.0 release commit.
+          python -m pip install "git+https://github.com/Mresyzz/opsscript-gate.git@fb83a738fa5d378c41ca9d4aed785ce8a405b31f"
 
       - name: Execute OpsScript Gate and capture native JSON
         run: |

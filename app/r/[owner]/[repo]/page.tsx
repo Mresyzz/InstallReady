@@ -50,13 +50,13 @@ export default async function RepoResolverPage({ params, searchParams }: PagePro
     if (err instanceof GitHubApiError) {
       if (err.code === "NOT_FOUND") {
         title = "Repository Not Found";
-        message = `The repository '${owner}/${repo}' does not exist on GitHub or is private. Only public repositories are supported in v0.1.`;
+        message = `The repository '${owner}/${repo}' does not exist on GitHub or is private. Only public repositories are supported.`;
       } else if (err.code === "RATE_LIMITED") {
         title = "GitHub API Rate Limit Reached";
         message = "GitHub API hourly rate limit has been exceeded. Please wait a few moments or configure a GITHUB_TOKEN on the server.";
       } else if (err.code === "PRIVATE_REPO") {
         title = "Private Repository Not Supported";
-        message = "InstallReady v0.1 only scans public repositories. Authenticated owner scans will be available in future releases.";
+        message = "InstallReady scans public repositories only. Authenticated owner scans are not available yet.";
       } else {
         message = err.message;
       }
