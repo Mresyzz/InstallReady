@@ -5,11 +5,17 @@
 [![CI](https://github.com/Mresyzz/InstallReady/actions/workflows/ci.yml/badge.svg)](https://github.com/Mresyzz/InstallReady/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
+[Try InstallReady online](https://installready.mresy.chatgpt.site) · [Run it locally](#-local-development)
+
 **InstallReady** checks Linux installer and bootstrap scripts (`install.sh`, `setup.sh`, `bootstrap.sh`) across Debian, Ubuntu, and Alpine before users discover the breakage for you.
 
 Paste a public GitHub repository for a commit-pinned review, or use the [private script workbench](/try)
 when you do not want to share a repository. The browser workbench never uploads or executes the pasted
 script. A result page can generate a PR workflow, a saved Markdown report, and a README badge.
+
+InstallReady is deliberately deterministic: the web scan uses versioned shell rules and immutable Git
+commits. It does not call an AI model or execute repository code on the web server. Runtime evidence comes
+from the generated GitHub Actions workflow and is labeled separately from static findings.
 
 ---
 
