@@ -7,7 +7,7 @@ import { ArrowRight, Loader2, AlertCircle, Sparkles } from "lucide-react";
 
 const EXAMPLE_REPOS = [
   { label: "OpsScript Gate", value: "https://github.com/Mresyzz/opsscript-gate", badge: "Engine" },
-  { label: "Fixture (Alpine Fail)", value: "demo/installer-fixture", badge: "Demo" },
+  { label: "Try a failing example", value: "https://github.com/Mresyzz/opsscript-gate", badge: "Example" },
   { label: "NVM", value: "https://github.com/nvm-sh/nvm", badge: "Popular" },
 ];
 

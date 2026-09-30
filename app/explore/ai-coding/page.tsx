@@ -135,7 +135,7 @@ export default function AiCodingPage() {
         </div>
         <p className="text-xs text-muted-foreground leading-relaxed">
           AgentReady will graduate into an independent validation suite measuring environment prerequisites (Node versions, Python wheels, glibc vs musl, dynamic linker availability) for terminal AI agents.
-          During v0.1, it remains an integral vertical page of InstallReady.
+          This page remains an experimental vertical of InstallReady; every status is labelled until it has evidence.
         </p>
       </div>
     </div>

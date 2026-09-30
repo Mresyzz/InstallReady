@@ -43,7 +43,7 @@ export function CompatibilityMatrix({
           </div>
         ) : (
           <div className="text-xs font-mono text-muted-foreground">
-            Heuristic static checks across package managers & shell dependencies
+            No container run for this result; heuristic review only
           </div>
         )}
       </div>
@@ -146,8 +146,7 @@ export function CompatibilityMatrix({
         <div className="flex items-center gap-2 p-3 rounded-lg border border-border bg-muted/40 text-xs text-muted-foreground">
           <Terminal className="h-4 w-4 text-zinc-400 shrink-0" />
           <span>
-            <strong>Note:</strong> Static analysis infers potential package-manager and syntax assumptions. True Linux
-            compatibility requires executing in isolated containers with OpsScript Gate.
+            <strong>Static review only:</strong> this page did not execute the script. Generate the workflow below to run it in isolated containers with OpsScript Gate, then attach the resulting report to your repository.
           </span>
         </div>
       )}

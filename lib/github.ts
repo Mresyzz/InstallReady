@@ -90,7 +90,7 @@ export async function fetchRepoMetadata(owner: string, repo: string): Promise<Re
     if (rateRemaining === "0") {
       throw new GitHubApiError("RATE_LIMITED", "GitHub API rate limit exceeded. Please configure GITHUB_TOKEN or try again later.", 403);
     }
-    throw new GitHubApiError("PRIVATE_REPO", "Access denied. Private repositories are not supported in v0.1.", 403);
+    throw new GitHubApiError("PRIVATE_REPO", "Access denied. Private repositories are not supported.", 403);
   }
 
   if (!res.ok) {

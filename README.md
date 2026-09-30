@@ -7,15 +7,19 @@
 
 **InstallReady** checks Linux installer and bootstrap scripts (`install.sh`, `setup.sh`, `bootstrap.sh`) across Debian, Ubuntu, and Alpine before users discover the breakage for you.
 
+Paste a public GitHub repository for a commit-pinned review, or use the [private script workbench](/try)
+when you do not want to share a repository. The browser workbench never uploads or executes the pasted
+script. A result page can generate a PR workflow, a saved Markdown report, and a README badge.
+
 ---
 
 ## 🎯 Illustrative Output (Demo Fixture)
 
 ```text
-demo/installer-fixture (Demo fixture)
-install.sh (commit 22222222...)
+Built-in Alpine mismatch (Illustrative)
+install.sh
 
-Linux Install Compatibility — 3 / 4 Runtime Verified
+Linux Install Compatibility — Illustrative 3 / 4 Runtime Result
 
 Debian 12        ✅ PASS
 Ubuntu 22.04     ✅ PASS
@@ -57,7 +61,7 @@ InstallReady operates on a strict two-level model:
    - Statuses: **Likely compatible**, **Potential issue**, or **Unknown**. *Never uses PASS or green badges for static analysis.*
 
 2. **Level 2 — Runtime Verification**:
-   - Powered by [OpsScript Gate](https://github.com/Mresyzz/opsscript-gate) (`Mresyzz/opsscript-gate@v0.4.1`).
+   - Powered by [OpsScript Gate](https://github.com/Mresyzz/opsscript-gate) (`Mresyzz/opsscript-gate@v0.6.0`).
    - Executes scripts inside isolated, unprivileged Debian, Ubuntu, and Alpine containers in GitHub Actions.
    - Records true runtime exit codes, command-level breakages, line numbers, and timeouts.
    - Statuses: **PASS**, **FAIL**, **ERROR**, or **TIMED_OUT**.
@@ -114,7 +118,7 @@ jobs:
         uses: actions/checkout@v7
 
       - name: Run OpsScript Gate Compatibility Check
-        uses: Mresyzz/opsscript-gate@v0.4.1
+        uses: Mresyzz/opsscript-gate@v0.6.0
         with:
           script-path: install.sh
           shell: auto
@@ -129,6 +133,10 @@ Or test locally with Python 3.10+ and Docker:
 pip install opsscript-gate
 opsscript-gate run ./install.sh --shell auto --timeout 60
 ```
+
+The generated workflow uses OpsScript Gate `v0.6.0`, disables checkout credential persistence,
+keeps container networking off by default, and saves the JSON report as a GitHub Actions artifact.
+Use the PR-only option when a repository has many scripts; it runs only scripts changed in the pull request.
 
 ---
 

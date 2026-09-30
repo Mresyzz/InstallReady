@@ -9,7 +9,7 @@
 - a long-lived application host
 - any machine containing application secrets or tokens
 
-Docker containers are **NOT** treated as a security sandbox for arbitrary untrusted code. Therefore, InstallReady v0.1 enforces a strict two-level execution model:
+Docker containers are **NOT** treated as a security sandbox for arbitrary untrusted code. Therefore, InstallReady enforces a strict two-level execution model:
 
 ### Level 1 — Static Analysis (Web Tier)
 Available for any public GitHub repository. It only:
@@ -19,7 +19,7 @@ Available for any public GitHub repository. It only:
 - **NEVER** spawns shell processes or executes repository code.
 
 ### Level 2 — Runtime Verified (Isolated GitHub Actions Tier)
-Executed exclusively within disposable GitHub Actions runners using [OpsScript Gate](https://github.com/Mresyzz/opsscript-gate) (`Mresyzz/opsscript-gate@v0.4.1`).
+Executed exclusively within disposable GitHub Actions runners using [OpsScript Gate](https://github.com/Mresyzz/opsscript-gate) (`Mresyzz/opsscript-gate@v0.6.0`).
 - Automatic showcase scans are strictly restricted to a curated allowlist.
 - Arbitrary user repositories are **NEVER** automatically executed on InstallReady shared infrastructure.
 - Users can run verification inside their own repository via generated GitHub Actions workflows.

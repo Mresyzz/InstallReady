@@ -53,7 +53,7 @@ export async function GET(
     });
   }
 
-  // v0.1 无持久化静态分析缓存时，诚实返回 not checked 徽章，坚决不虚报 static checked
+  // Without a persisted result, return not checked rather than implying that a scan ran.
   const svg = generateInstallReadyBadge({ type: "not_checked" });
   return new NextResponse(svg, {
     headers: {

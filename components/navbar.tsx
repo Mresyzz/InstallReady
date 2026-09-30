@@ -27,7 +27,7 @@ export function Navbar() {
             <div className="flex items-center gap-1.5">
               <span className="font-semibold text-sm tracking-tight text-foreground">InstallReady</span>
               <span className="rounded bg-zinc-200 px-1.5 py-0.5 text-[10px] font-mono text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300">
-                v0.1
+                public beta
               </span>
             </div>
           </Link>

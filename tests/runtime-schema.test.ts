@@ -126,6 +126,13 @@ describe("Untrusted Artifact Schema Validation Boundary", () => {
     expect(res.valid).toBe(false);
   });
 
+  it("accepts the current 0.6.0 engine version", () => {
+    const current = JSON.parse(validJson);
+    current.engine.version = "0.6.0";
+    const res = validateUntrustedArtifactJson(JSON.stringify(current), validOptions);
+    expect(res.valid).toBe(true);
+  });
+
   it("rejects unauthorized distro name", () => {
     const tampered = JSON.parse(validJson);
     tampered.results[0].distro = "ubuntu:latest";

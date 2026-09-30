@@ -33,6 +33,11 @@ export default function HomePage() {
         {/* 核心输入框 */}
         <div className="pt-2">
           <RepoInput />
+          <div className="mt-4 text-center">
+            <Link href="/try" className="text-xs text-blue-500 hover:underline">
+              No public repository? Review a shell script privately in your browser →
+            </Link>
+          </div>
         </div>
 
         {/* 快速演示卡片：Alpine 踩坑对比 */}
@@ -44,15 +49,15 @@ export default function HomePage() {
                   ir
                 </div>
                 <div>
-                  <div className="font-mono text-xs font-semibold text-foreground">demo/installer-fixture</div>
-                  <div className="font-mono text-[11px] text-zinc-500">install.sh (commit 22222222)</div>
+                  <div className="font-mono text-xs font-semibold text-foreground">Built-in Alpine mismatch</div>
+                  <div className="font-mono text-[11px] text-zinc-500">install.sh (illustrative)</div>
                 </div>
               </div>
 
               <div className="flex items-center gap-2">
                 <span className="inline-flex items-center gap-1 text-[11px] font-mono px-2 py-0.5 rounded-full bg-rose-500/10 text-rose-500 border border-rose-500/20 font-medium">
                   <XCircle className="h-3 w-3" />
-                  3 / 4 Runtime Verified
+                  3 / 4 Example result
                 </span>
               </div>
             </div>
@@ -78,7 +83,7 @@ export default function HomePage() {
 
             <div className="p-3.5 rounded-xl border border-rose-500/30 bg-rose-500/[0.02] space-y-2">
               <div className="flex items-center justify-between text-xs font-mono">
-                <span className="font-bold text-rose-400">Alpine 3.20 Failure: Line 43</span>
+                <span className="font-bold text-rose-400">Alpine 3.20 Example: Line 43</span>
                 <span className="text-zinc-500">apt-get: command not found</span>
               </div>
               <div className="p-2 rounded bg-zinc-900 border border-zinc-800 text-zinc-300 font-mono text-xs">
@@ -215,7 +220,7 @@ Alpine uses apk instead of apt-get.`}</code>
               rel="noreferrer"
               className="text-foreground underline decoration-zinc-500 underline-offset-2 hover:text-blue-500 font-mono"
             >
-              Mresyzz/opsscript-gate@v0.4.1
+              Mresyzz/opsscript-gate@v0.6.0
             </a>
             .
           </p>
