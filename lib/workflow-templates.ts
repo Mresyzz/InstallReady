@@ -1,4 +1,4 @@
-import { validateRepositoryPath } from "./path-validator";
+import { validateRepositoryPath } from "./repository-path";
 import { ENGINE_ACTION } from "./engine";
 
 /**

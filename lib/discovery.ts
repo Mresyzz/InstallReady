@@ -1,4 +1,4 @@
-import { validateRepositoryPath } from "./path-validator";
+import { validateRepositoryPath } from "./repository-path";
 
 export interface DiscoveredScript {
   path: string;

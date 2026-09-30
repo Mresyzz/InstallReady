@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { validateFullCommitSha } from "./repo-url";
-import { validateRepositoryPath } from "./path-validator";
+import { validateRepositoryPath } from "./repository-path";
 import { ENGINE_VERSION } from "./engine";
 
 export const ALLOWED_DISTROS = [
