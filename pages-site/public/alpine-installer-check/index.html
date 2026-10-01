@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="Check whether a Linux installer works on Alpine as well as Debian and Ubuntu before merging." />
+    <link rel="canonical" href="https://mresyzz.github.io/InstallReady/alpine-installer-check/" />
+    <meta property="og:title" content="Check shell installers on Alpine, Debian, and Ubuntu" />
+    <meta property="og:description" content="Catch apt-get, Bash, and other distro assumptions before users run your installer." />
+    <meta property="og:url" content="https://mresyzz.github.io/InstallReady/alpine-installer-check/" />
+    <link rel="stylesheet" href="../landing.css" />
+    <title>Alpine installer compatibility check | InstallReady</title>
+  </head>
+  <body>
+    <main class="wrap">
+      <a href="../">InstallReady</a>
+      <p class="eyebrow">Debian · Ubuntu · Alpine</p>
+      <h1>Does your Linux installer work outside Ubuntu?</h1>
+      <p>A script can pass a shell syntax check and still fail on Alpine because it assumes <code>apt-get</code>, Bash, GNU tools, or an interactive terminal. InstallReady scans a public repository and generates the runtime workflow that checks those assumptions.</p>
+      <div class="card">
+        <strong>Run the check now</strong><br />
+        <a class="button" href="../?repo=Mresyzz%2Fopsscript-gate">Open the browser scanner</a>
+        <a class="button" href="https://github.com/Mresyzz/opsscript-gate">Read the project</a>
+      </div>
+      <h2>Typical failure</h2>
+      <pre class="code">#!/bin/sh
+set -e
+apt-get update -qq</pre>
+      <p>This is valid shell, but Alpine normally uses <code>apk</code>. The generated report shows the distribution and command that failed, then leaves the final fix to the project maintainer.</p>
+      <h2>Use it in GitHub Actions</h2>
+      <pre class="code">- uses: actions/checkout@v7
+- uses: Mresyzz/opsscript-gate@v0.6.3
+  with:
+    preset: minimal
+    network: none</pre>
+      <footer><a href="../shellcheck-alternative/">ShellCheck runtime companion</a> · <a href="https://github.com/Mresyzz/opsscript-gate">Source code</a></footer>
+    </main>
+  </body>
+</html>

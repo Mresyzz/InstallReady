@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="A ShellCheck companion for testing shell installers at runtime across Debian, Ubuntu, and Alpine." />
+    <link rel="canonical" href="https://mresyzz.github.io/InstallReady/shellcheck-alternative/" />
+    <meta property="og:title" content="ShellCheck alternative for runtime compatibility" />
+    <meta property="og:description" content="Find shell installer failures that syntax checks cannot see." />
+    <meta property="og:url" content="https://mresyzz.github.io/InstallReady/shellcheck-alternative/" />
+    <link rel="stylesheet" href="../landing.css" />
+    <title>ShellCheck alternative for runtime compatibility | InstallReady</title>
+  </head>
+  <body>
+    <main class="wrap">
+      <a href="../">InstallReady</a>
+      <p class="eyebrow">Shell portability in CI</p>
+      <h1>ShellCheck finds syntax issues. Runtime checks find distro issues.</h1>
+      <p>ShellCheck is excellent for static shell analysis. It does not tell you whether an installer can run when Ubuntu has <code>apt-get</code> and Alpine has <code>apk</code>, or when a script quietly depends on Bash.</p>
+      <div class="card">
+        <strong>Try a public repository without signing in</strong><br />
+        <a class="button" href="../?repo=Mresyzz%2Fopsscript-gate">Scan OpsScript Gate</a>
+        <a class="button" href="https://github.com/Mresyzz/opsscript-gate/marketplace/actions/opsscript-gate">Add the GitHub Action</a>
+      </div>
+      <h2>What the runtime check covers</h2>
+      <ul>
+        <li>Debian, Ubuntu, and Alpine container environments.</li>
+        <li>Missing commands, package-manager assumptions, interpreter mismatches, and interactive hangs.</li>
+        <li>Commit-pinned reports that can run in your repository's own GitHub Actions workflow.</li>
+      </ul>
+      <h2>Minimal workflow</h2>
+      <pre class="code">- uses: actions/checkout@v7
+- uses: Mresyzz/opsscript-gate@v0.6.3
+  with:
+    shell: auto
+    network: none</pre>
+      <p>OpsScript Gate complements ShellCheck; it does not replace syntax analysis or your project's integration tests.</p>
+      <footer><a href="../alpine-installer-check/">Alpine installer checks</a> · <a href="https://github.com/Mresyzz/opsscript-gate">Source code</a></footer>
+    </main>
+  </body>
+</html>
