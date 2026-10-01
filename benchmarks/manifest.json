@@ -1,0 +1,74 @@
+[
+  {
+    "id": "portable-shell",
+    "path": "portable.sh",
+    "source": "synthetic",
+    "expected": {
+      "debian:12-slim": "Unknown",
+      "ubuntu:22.04": "Unknown",
+      "ubuntu:24.04": "Unknown",
+      "alpine:3.20": "Unknown"
+    },
+    "notes": "Portable syntax alone does not prove package or runtime compatibility."
+  },
+  {
+    "id": "debian-package-manager",
+    "path": "apt.sh",
+    "source": "synthetic",
+    "expected": {
+      "debian:12-slim": "Likely compatible",
+      "ubuntu:22.04": "Likely compatible",
+      "ubuntu:24.04": "Likely compatible",
+      "alpine:3.20": "Potential issue"
+    },
+    "notes": "An unguarded apt-get command is a concrete Alpine risk."
+  },
+  {
+    "id": "alpine-package-manager",
+    "path": "apk.sh",
+    "source": "synthetic",
+    "expected": {
+      "debian:12-slim": "Potential issue",
+      "ubuntu:22.04": "Potential issue",
+      "ubuntu:24.04": "Potential issue",
+      "alpine:3.20": "Likely compatible"
+    },
+    "notes": "An unguarded apk command is a concrete Debian/Ubuntu risk."
+  },
+  {
+    "id": "guarded-package-managers",
+    "path": "guarded.sh",
+    "source": "synthetic",
+    "expected": {
+      "debian:12-slim": "Likely compatible",
+      "ubuntu:22.04": "Likely compatible",
+      "ubuntu:24.04": "Likely compatible",
+      "alpine:3.20": "Likely compatible"
+    },
+    "notes": "Explicit apt/apk branches are evidence, but still require runtime verification."
+  },
+  {
+    "id": "posix-bashism",
+    "path": "bashism.sh",
+    "source": "synthetic",
+    "expected": {
+      "debian:12-slim": "Likely compatible",
+      "ubuntu:22.04": "Likely compatible",
+      "ubuntu:24.04": "Likely compatible",
+      "alpine:3.20": "Potential issue"
+    },
+    "notes": "Bash-only syntax under /bin/sh is a shell compatibility risk."
+  },
+  {
+    "id": "service-manager",
+    "path": "systemctl.sh",
+    "source": "synthetic",
+    "expected": {
+      "debian:12-slim": "Potential issue",
+      "ubuntu:22.04": "Potential issue",
+      "ubuntu:24.04": "Potential issue",
+      "alpine:3.20": "Potential issue"
+    },
+    "notes": "Minimal containers do not provide a running systemd instance by default."
+  }
+]

@@ -365,11 +365,54 @@ export function analyzeShellScript(scriptPath: string, content: string): StaticA
     const relevantFindings = findings.filter(
       (f) => f.affected_distros.includes(d.id) && f.severity !== "info"
     );
+    const hasNonInfoFindings = findings.some((f) => f.severity !== "info");
+
+    if (relevantFindings.length > 0) {
+      return {
+        distro: d.id,
+        displayName: d.displayName,
+        status: "Potential issue",
+        issueCount: relevantFindings.length,
+        evidence: relevantFindings.map((finding) => ({
+          line: finding.line,
+          code: finding.command,
+          reason: finding.message,
+        })),
+      };
+    }
+
+    if (hasGuards) {
+      return {
+        distro: d.id,
+        displayName: d.displayName,
+        status: "Likely compatible",
+        issueCount: 0,
+        evidence: [{
+          reason: "An explicit distribution or package-manager guard was detected; no unguarded rule matched this distribution.",
+        }],
+      };
+    }
+
+    if (hasNonInfoFindings) {
+      return {
+        distro: d.id,
+        displayName: d.displayName,
+        status: "Likely compatible",
+        issueCount: 0,
+        evidence: [{
+          reason: "No static rule targets this distribution. Compatibility is inferred from the observed command set and still needs a runtime check.",
+        }],
+      };
+    }
+
     return {
       distro: d.id,
       displayName: d.displayName,
-      status: relevantFindings.length === 0 ? "Likely compatible" : "Potential issue",
-      issueCount: relevantFindings.length,
+      status: "Unknown",
+      issueCount: 0,
+      evidence: [{
+        reason: "No static rule proves runtime compatibility; run the generated OpsScript Gate workflow.",
+      }],
     };
   });
 

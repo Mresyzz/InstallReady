@@ -19,11 +19,21 @@ export interface Finding {
   hint: string;
 }
 
+export interface StaticEvidence {
+  /** Optional source line that supports this conclusion. */
+  line?: number;
+  /** Optional source command or expression shown to the reviewer. */
+  code?: string;
+  /** Human-readable explanation of what the static rule can and cannot prove. */
+  reason: string;
+}
+
 export interface DistroCompatibilityStatus {
   distro: string; // e.g. "debian:12-slim", "ubuntu:22.04", "ubuntu:24.04", "alpine:3.20"
   displayName: string; // e.g. "Debian 12", "Ubuntu 22.04", "Ubuntu 24.04", "Alpine 3.20"
   status: "Likely compatible" | "Potential issue" | "Unknown";
   issueCount: number;
+  evidence: StaticEvidence[];
 }
 
 export const TARGET_DISTROS = [

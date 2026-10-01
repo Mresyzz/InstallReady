@@ -23,10 +23,14 @@ export function generateReportMarkdown(report: StaticAnalysisReport, options: {
     `Analysis date: ${report.analyzedAt}`, "",
     runtime ? `Runtime checks: ${runtime.summary.passed}/${runtime.summary.total} passed (OpsScript Gate ${runtime.engine.version}).`
       : "Static analysis only. The script has not been executed; this is not proof of a successful installation.",
-    "", "| Distribution | Static review | Runtime |", "| --- | --- | --- |",
+    "", "| Distribution | Static review | Evidence | Runtime |", "| --- | --- | --- | --- |",
     ...report.distroCompatibility.map((item) => {
       const result = runtime?.results.find((r) => r.distro === item.distro);
-      return `| ${cell(item.displayName)} | ${cell(item.status)} | ${result ? `${result.status} (exit ${result.exit_code})` : "Not run"} |`;
+      const evidence = item.evidence.map((entry) => {
+        const source = entry.line ? `line ${entry.line}: ` : "";
+        return `${source}${entry.reason}`;
+      }).join(" ");
+      return `| ${cell(item.displayName)} | ${cell(item.status)} | ${cell(evidence)} | ${result ? `${result.status} (exit ${result.exit_code})` : "Not run"} |`;
     }), "", "## Findings", "",
     ...(report.findings.length ? report.findings.flatMap((f) => [
       `- Line ${f.line}: ${prose(f.message)}`,
