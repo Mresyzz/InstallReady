@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://mresyzz.github.io/InstallReady/sitemap.xml
