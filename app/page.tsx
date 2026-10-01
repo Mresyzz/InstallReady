@@ -223,7 +223,7 @@ Alpine uses apk instead of apt-get.`}</code>
               rel="noreferrer"
               className="text-foreground underline decoration-zinc-500 underline-offset-2 hover:text-blue-500 font-mono"
             >
-              Mresyzz/opsscript-gate@v0.6.3
+              Mresyzz/opsscript-gate@v0.7.0
             </a>
             .
           </p>

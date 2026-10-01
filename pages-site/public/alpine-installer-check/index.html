@@ -29,7 +29,7 @@ apt-get update -qq</pre>
       <p>This is valid shell, but Alpine normally uses <code>apk</code>. The generated report shows the distribution and command that failed, then leaves the final fix to the project maintainer.</p>
       <h2>Use it in GitHub Actions</h2>
       <pre class="code">- uses: actions/checkout@v7
-- uses: Mresyzz/opsscript-gate@v0.6.3
+- uses: Mresyzz/opsscript-gate@v0.7.0
   with:
     preset: minimal
     network: none</pre>
