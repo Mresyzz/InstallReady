@@ -20,10 +20,16 @@ export interface Finding {
 }
 
 export interface StaticEvidence {
+  /** Repository-relative script path that supplied the evidence. */
+  file?: string;
   /** Optional source line that supports this conclusion. */
   line?: number;
   /** Optional source command or expression shown to the reviewer. */
   code?: string;
+  /** Guard recognized on the source line, or an explicit absence marker. */
+  guard?: string;
+  /** Distro assumption or scope attached to the evidence. */
+  assumption?: string;
   /** Human-readable explanation of what the static rule can and cannot prove. */
   reason: string;
 }

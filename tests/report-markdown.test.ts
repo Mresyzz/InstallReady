@@ -9,6 +9,8 @@ describe("Markdown report export", () => {
     expect(markdown).toContain("Static analysis only");
     expect(markdown).toContain("owner/repo");
     expect(markdown).toContain("apt-get");
+    expect(markdown).toContain("guard none detected on this line");
+    expect(markdown).toContain("assumption alpine:3.20");
     expect(markdown).not.toContain("Runtime checks:");
   });
 });
