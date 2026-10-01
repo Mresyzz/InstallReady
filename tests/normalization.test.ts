@@ -48,7 +48,7 @@ describe("OpsScript Gate Native JSON Normalizer", () => {
     expect(normalized.commit_sha).toBe(meta.expectedCommitSha);
     expect(normalized.script_path).toBe("install.sh");
     expect(normalized.engine.name).toBe("OpsScript Gate");
-    expect(normalized.engine.version).toBe("0.6.0");
+    expect(normalized.engine.version).toBe("0.6.1");
     expect(normalized.summary.passed).toBe(4);
     expect(normalized.summary.total).toBe(4);
     expect(normalized.summary.status).toBe("PASS");

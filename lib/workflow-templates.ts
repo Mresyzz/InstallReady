@@ -3,7 +3,7 @@ import { ENGINE_ACTION } from "./engine";
 
 /**
  * 为目标仓库生成即插即用的 GitHub Actions 配置文件内容
- * 显式引用 Mresyzz/opsscript-gate@v0.6.0 运行时引擎
+ * 显式引用当前 OpsScript Gate release 运行时引擎
  */
 export function generateGitHubActionWorkflow(scriptPath: string = "install.sh", changedOnly = false): string {
   const safeScriptPath = validateRepositoryPath(scriptPath).normalizedPath || "install.sh";

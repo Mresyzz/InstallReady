@@ -15,7 +15,7 @@ export const RUNTIME_STATUS_ENUM = ["PASS", "FAIL", "TIMED_OUT", "ERROR"] as con
 export type RuntimeStatus = (typeof RUNTIME_STATUS_ENUM)[number];
 
 // Keep historical artifacts readable while making the current generator version explicit.
-export const ALLOWED_ENGINE_VERSIONS = ["0.4.1", "0.5.1", ENGINE_VERSION] as const;
+export const ALLOWED_ENGINE_VERSIONS = ["0.4.1", "0.5.1", "0.6.0", ENGINE_VERSION] as const;
 
 export const DistroResultSchema = z.object({
   distro: z.enum(ALLOWED_DISTROS),
