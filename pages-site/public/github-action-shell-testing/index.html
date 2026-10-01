@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="Add a GitHub Actions check that runs shell installers across Debian, Ubuntu, and Alpine." />
+    <link rel="canonical" href="https://mresyzz.github.io/InstallReady/github-action-shell-testing/" />
+    <meta property="og:title" content="GitHub Action for shell script compatibility" />
+    <meta property="og:description" content="Run shell installers across Debian, Ubuntu, and Alpine before merge." />
+    <meta property="og:url" content="https://mresyzz.github.io/InstallReady/github-action-shell-testing/" />
+    <link rel="stylesheet" href="../landing.css" />
+    <title>GitHub Action for shell script compatibility | InstallReady</title>
+  </head>
+  <body>
+    <main class="wrap">
+      <a href="../">InstallReady</a>
+      <p class="eyebrow">GitHub Actions · shell portability</p>
+      <h1>Test shell installers before they reach a user.</h1>
+      <p>ShellCheck catches syntax and common shell mistakes. This workflow runs the installer in Debian, Ubuntu, and Alpine containers so package-manager and interpreter assumptions fail in CI instead of on a user's machine.</p>
+      <div class="card">
+        <strong>Try it without installing anything</strong><br />
+        <a class="button" href="../?repo=Mresyzz%2Fopsscript-gate">Scan a public repository</a>
+        <a class="button" href="https://github.com/marketplace/actions/opsscript-gate">Open the Marketplace action</a>
+      </div>
+      <h2>Copy this workflow</h2>
+      <pre class="code">name: Shell compatibility
+on:
+  pull_request:
+    paths: ['**/*.sh', '**/*.bash']
+jobs:
+  compatibility:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: Mresyzz/opsscript-gate@v0.6.3
+        with:
+          shell: auto
+          network: none</pre>
+      <p>The action uses unprivileged containers and does not mount the repository into the test container. It is a runtime compatibility check, not a security sandbox or a replacement for integration tests.</p>
+      <h2>Typical failure</h2>
+      <pre class="code">apt-get update -qq</pre>
+      <p>This command is valid shell but fails on Alpine, which normally uses <code>apk</code>. The report identifies the distribution and failing command.</p>
+      <footer><a href="../shellcheck-alternative/">ShellCheck runtime companion</a> · <a href="../alpine-installer-check/">Alpine installer checks</a> · <a href="https://github.com/Mresyzz/opsscript-gate">Source code</a></footer>
+    </main>
+  </body>
+</html>

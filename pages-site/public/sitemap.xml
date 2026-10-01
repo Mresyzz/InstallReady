@@ -12,4 +12,8 @@
     <loc>https://mresyzz.github.io/InstallReady/alpine-installer-check/</loc>
     <changefreq>weekly</changefreq>
   </url>
+  <url>
+    <loc>https://mresyzz.github.io/InstallReady/github-action-shell-testing/</loc>
+    <changefreq>weekly</changefreq>
+  </url>
 </urlset>
