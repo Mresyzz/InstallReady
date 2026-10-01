@@ -107,12 +107,15 @@ export function CompatibilityMatrix({
 
           // 静态分析状态
           const isIssue = staticItem?.status === "Potential issue";
+          const isUnknown = staticItem?.status === "Unknown";
           return (
             <div
               key={target.id}
               className={`relative p-4 rounded-xl border transition-all ${
                 isIssue
                   ? "bg-amber-500/[0.04] border-amber-500/30 dark:border-amber-500/20"
+                  : isUnknown
+                  ? "bg-muted/30 border-border"
                   : "bg-card border-border"
               }`}
             >
@@ -120,6 +123,8 @@ export function CompatibilityMatrix({
                 <span className="text-xs font-mono text-muted-foreground">{target.id}</span>
                 {isIssue ? (
                   <AlertTriangle className="h-4 w-4 text-amber-500" />
+                ) : isUnknown ? (
+                  <HelpCircle className="h-4 w-4 text-zinc-400" />
                 ) : (
                   <HelpCircle className="h-4 w-4 text-blue-400" />
                 )}
@@ -128,7 +133,7 @@ export function CompatibilityMatrix({
               <div className="text-sm font-semibold text-foreground mb-1">{target.displayName}</div>
 
               <div className="flex items-baseline justify-between pt-2 border-t border-border/50 text-xs font-mono">
-                <span className={isIssue ? "text-amber-500 font-medium" : "text-blue-500"}>
+                <span className={isIssue ? "text-amber-500 font-medium" : isUnknown ? "text-zinc-500" : "text-blue-500"}>
                   {staticItem?.status || "Unknown"}
                 </span>
                 {isIssue && (
@@ -137,6 +142,11 @@ export function CompatibilityMatrix({
                   </span>
                 )}
               </div>
+              {staticItem?.evidence[0] && (
+                <p className="mt-2 text-[11px] leading-relaxed text-muted-foreground">
+                  {staticItem.evidence[0].reason}
+                </p>
+              )}
             </div>
           );
         })}

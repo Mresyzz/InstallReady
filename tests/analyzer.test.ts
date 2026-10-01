@@ -3,7 +3,7 @@ import { analyzeShellScript } from "../lib/analyzer";
 
 describe("Static Shell Installer Analyzer & Fixtures Verification", () => {
   // Fixture A: Portable installer
-  it("Fixture A: portable installer reports Likely compatible across all distros", () => {
+  it("Fixture A: portable installer stays Unknown without runtime evidence", () => {
     const script = `#!/bin/sh
 set -e
 echo "Installing application..."
@@ -14,7 +14,8 @@ echo "Done."`;
     expect(report.findings.filter((f) => f.severity === "warning").length).toBe(0);
 
     for (const status of report.distroCompatibility) {
-      expect(status.status).toBe("Likely compatible");
+      expect(status.status).toBe("Unknown");
+      expect(status.evidence[0]?.reason).toContain("runtime compatibility");
     }
   });
 
@@ -37,6 +38,8 @@ apt-get install -y curl`;
     expect(aptFinding?.line).toBe(3);
     expect(aptFinding?.affected_distros).toContain("alpine:3.20");
     expect(aptFinding?.hint).toContain("apk");
+    expect(alpineStatus?.evidence[0]?.line).toBe(3);
+    expect(alpineStatus?.evidence[0]?.code).toContain("apt-get");
   });
 
   // Fixture C: Alpine-only assumption
@@ -89,6 +92,7 @@ fi`;
 
     for (const status of report.distroCompatibility) {
       expect(status.status).toBe("Likely compatible");
+      expect(status.evidence[0]?.reason).toContain("guard");
     }
   });
 

@@ -19,7 +19,7 @@ Available for any public GitHub repository. It only:
 - **NEVER** spawns shell processes or executes repository code.
 
 ### Level 2 — Runtime Verified (Isolated GitHub Actions Tier)
-Executed exclusively within disposable GitHub Actions runners using [OpsScript Gate](https://github.com/Mresyzz/opsscript-gate) (`Mresyzz/opsscript-gate@v0.6.0`).
+Executed exclusively within disposable GitHub Actions runners using [OpsScript Gate](https://github.com/Mresyzz/opsscript-gate) (`Mresyzz/opsscript-gate@v0.6.3`).
 - Automatic showcase scans are strictly restricted to a curated allowlist.
 - Arbitrary user repositories are **NEVER** automatically executed on InstallReady shared infrastructure.
 - Users can run verification inside their own repository via generated GitHub Actions workflows.

@@ -47,10 +47,12 @@ demo/portable-fixture (Illustrative output)
 install.sh
 
 Static Analysis Review:
-Debian 12        Likely compatible
-Ubuntu 22.04     Likely compatible
-Ubuntu 24.04     Likely compatible
-Alpine 3.20      Likely compatible
+Debian 12        Unknown
+Ubuntu 22.04     Unknown
+Ubuntu 24.04     Unknown
+Alpine 3.20      Unknown
+
+Evidence: no static rule proves runtime compatibility; run the generated workflow.
 ```
 
 ---
@@ -67,7 +69,7 @@ InstallReady operates on a strict two-level model:
    - Statuses: **Likely compatible**, **Potential issue**, or **Unknown**. *Never uses PASS or green badges for static analysis.*
 
 2. **Level 2 — Runtime Verification**:
-   - Powered by [OpsScript Gate](https://github.com/Mresyzz/opsscript-gate) (`Mresyzz/opsscript-gate@v0.6.0`).
+   - Powered by [OpsScript Gate](https://github.com/Mresyzz/opsscript-gate) (`Mresyzz/opsscript-gate@v0.6.3`).
    - Executes scripts inside isolated, unprivileged Debian, Ubuntu, and Alpine containers in GitHub Actions.
    - Records true runtime exit codes, command-level breakages, line numbers, and timeouts.
    - Statuses: **PASS**, **FAIL**, **ERROR**, or **TIMED_OUT**.
@@ -124,7 +126,7 @@ jobs:
         uses: actions/checkout@v7
 
       - name: Run OpsScript Gate Compatibility Check
-        uses: Mresyzz/opsscript-gate@v0.6.0
+        uses: Mresyzz/opsscript-gate@v0.6.3
         with:
           script-path: install.sh
           shell: auto
@@ -140,7 +142,7 @@ pip install opsscript-gate
 opsscript-gate run ./install.sh --shell auto --timeout 60
 ```
 
-The generated workflow uses OpsScript Gate `v0.6.0`, disables checkout credential persistence,
+The generated workflow uses OpsScript Gate `v0.6.3`, disables checkout credential persistence,
 keeps container networking off by default, and saves the JSON report as a GitHub Actions artifact.
 Use the PR-only option when a repository has many scripts; it runs only scripts changed in the pull request.
 
