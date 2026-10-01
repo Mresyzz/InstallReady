@@ -146,6 +146,10 @@ The generated workflow uses OpsScript Gate `v0.6.3`, disables checkout credentia
 keeps container networking off by default, and saves the JSON report as a GitHub Actions artifact.
 Use the PR-only option when a repository has many scripts; it runs only scripts changed in the pull request.
 
+InstallReady also runs the real action against its portable fixture in
+[`runtime-self-check.yml`](.github/workflows/runtime-self-check.yml). This is a
+maintainer self-check, not a claim of independent adoption.
+
 ---
 
 ## 🚀 Local Development

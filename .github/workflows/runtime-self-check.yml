@@ -1,0 +1,37 @@
+name: Runtime self-check
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  verify-fixture:
+    name: Verify a fixture in real containers
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Run OpsScript Gate on the portable fixture
+        uses: Mresyzz/opsscript-gate@v0.6.3
+        with:
+          script-path: benchmarks/portable.sh
+          shell: auto
+          network: none
+          format: json
+          output: reports/runtime-self-check.json
+
+      - name: Upload runtime evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: installready-runtime-self-check
+          path: reports/runtime-self-check.json
+          if-no-files-found: ignore
