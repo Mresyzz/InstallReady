@@ -4,7 +4,7 @@ import { generateGitHubActionWorkflow, generateCliSnippet } from "../lib/workflo
 describe("Workflow & CLI Snippet Generator", () => {
   it("references the current OpsScript Gate release", () => {
     const yaml = generateGitHubActionWorkflow("install.sh");
-    expect(yaml).toContain("uses: Mresyzz/opsscript-gate@v0.6.3");
+    expect(yaml).toContain("uses: Mresyzz/opsscript-gate@v0.7.0");
     expect(yaml).toContain("script-path: install.sh");
     expect(yaml).toContain("shell: auto");
     expect(yaml).toContain("timeout: 60");
