@@ -1,0 +1,35 @@
+name: Notify search indexes
+
+on:
+  workflow_run:
+    workflows: [Deploy GitHub Pages]
+    types: [completed]
+
+permissions: {}
+
+jobs:
+  notify:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Submit updated Pages URLs
+        env:
+          INDEXNOW_KEY: 2bf76ff558a5416a9856d0f5e521dec9
+        run: |
+          cat > request.json <<JSON
+          {
+            "host": "mresyzz.github.io",
+            "key": "${INDEXNOW_KEY}",
+            "keyLocation": "https://mresyzz.github.io/InstallReady/${INDEXNOW_KEY}.txt",
+            "urlList": [
+              "https://mresyzz.github.io/InstallReady/",
+              "https://mresyzz.github.io/InstallReady/shellcheck-alternative/",
+              "https://mresyzz.github.io/InstallReady/alpine-installer-check/",
+              "https://mresyzz.github.io/InstallReady/github-action-shell-testing/"
+            ]
+          }
+          JSON
+          curl --fail-with-body --silent --show-error \
+            -X POST 'https://api.indexnow.org/indexnow' \
+            -H 'Content-Type: application/json; charset=utf-8' \
+            --data-binary @request.json
