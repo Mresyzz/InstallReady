@@ -373,11 +373,17 @@ export function analyzeShellScript(scriptPath: string, content: string): StaticA
         displayName: d.displayName,
         status: "Potential issue",
         issueCount: relevantFindings.length,
-        evidence: relevantFindings.map((finding) => ({
-          line: finding.line,
-          code: finding.command,
-          reason: finding.message,
-        })),
+        evidence: relevantFindings.map((finding) => {
+          const guards = [...(lineGuardMap.get(finding.line) || [])];
+          return {
+            file: scriptPath,
+            line: finding.line,
+            code: finding.command,
+            guard: guards.length ? guards.join(", ") : "none detected on this line",
+            assumption: finding.affected_distros.join(", "),
+            reason: finding.message,
+          };
+        }),
       };
     }
 
@@ -388,6 +394,9 @@ export function analyzeShellScript(scriptPath: string, content: string): StaticA
         status: "Likely compatible",
         issueCount: 0,
         evidence: [{
+          file: scriptPath,
+          assumption: d.displayName,
+          guard: "explicit distribution/package-manager guard detected",
           reason: "An explicit distribution or package-manager guard was detected; no unguarded rule matched this distribution.",
         }],
       };
@@ -400,6 +409,9 @@ export function analyzeShellScript(scriptPath: string, content: string): StaticA
         status: "Likely compatible",
         issueCount: 0,
         evidence: [{
+          file: scriptPath,
+          assumption: d.displayName,
+          guard: "none detected; inferred from the observed command set",
           reason: "No static rule targets this distribution. Compatibility is inferred from the observed command set and still needs a runtime check.",
         }],
       };
@@ -411,6 +423,9 @@ export function analyzeShellScript(scriptPath: string, content: string): StaticA
       status: "Unknown",
       issueCount: 0,
       evidence: [{
+        file: scriptPath,
+        assumption: d.displayName,
+        guard: "none detected",
         reason: "No static rule proves runtime compatibility; run the generated OpsScript Gate workflow.",
       }],
     };

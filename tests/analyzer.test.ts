@@ -38,8 +38,11 @@ apt-get install -y curl`;
     expect(aptFinding?.line).toBe(3);
     expect(aptFinding?.affected_distros).toContain("alpine:3.20");
     expect(aptFinding?.hint).toContain("apk");
+    expect(alpineStatus?.evidence[0]?.file).toBe("install.sh");
     expect(alpineStatus?.evidence[0]?.line).toBe(3);
     expect(alpineStatus?.evidence[0]?.code).toContain("apt-get");
+    expect(alpineStatus?.evidence[0]?.guard).toBe("none detected on this line");
+    expect(alpineStatus?.evidence[0]?.assumption).toBe("alpine:3.20");
   });
 
   // Fixture C: Alpine-only assumption

@@ -27,8 +27,14 @@ export function generateReportMarkdown(report: StaticAnalysisReport, options: {
     ...report.distroCompatibility.map((item) => {
       const result = runtime?.results.find((r) => r.distro === item.distro);
       const evidence = item.evidence.map((entry) => {
-        const source = entry.line ? `line ${entry.line}: ` : "";
-        return `${source}${entry.reason}`;
+        const source = [
+          entry.file,
+          entry.line ? `line ${entry.line}` : undefined,
+          entry.code ? `command ${entry.code}` : undefined,
+          entry.guard ? `guard ${entry.guard}` : undefined,
+          entry.assumption ? `assumption ${entry.assumption}` : undefined,
+        ].filter(Boolean).join(", ");
+        return `${source ? `${source}: ` : ""}${entry.reason}`;
       }).join(" ");
       return `| ${cell(item.displayName)} | ${cell(item.status)} | ${cell(evidence)} | ${result ? `${result.status} (exit ${result.exit_code})` : "Not run"} |`;
     }), "", "## Findings", "",
