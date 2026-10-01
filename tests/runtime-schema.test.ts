@@ -126,7 +126,7 @@ describe("Untrusted Artifact Schema Validation Boundary", () => {
     expect(res.valid).toBe(false);
   });
 
-  it("accepts the current 0.6.0 engine version", () => {
+  it("accepts the current engine version", () => {
     const current = JSON.parse(validJson);
     current.engine.version = "0.6.0";
     const res = validateUntrustedArtifactJson(JSON.stringify(current), validOptions);
