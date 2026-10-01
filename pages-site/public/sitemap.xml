@@ -2,18 +2,14 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>https://mresyzz.github.io/InstallReady/</loc>
-    <changefreq>weekly</changefreq>
-  </url>
-  <url>
-    <loc>https://mresyzz.github.io/InstallReady/shellcheck-alternative/</loc>
-    <changefreq>weekly</changefreq>
   </url>
   <url>
     <loc>https://mresyzz.github.io/InstallReady/alpine-installer-check/</loc>
-    <changefreq>weekly</changefreq>
   </url>
   <url>
     <loc>https://mresyzz.github.io/InstallReady/github-action-shell-testing/</loc>
-    <changefreq>weekly</changefreq>
+  </url>
+  <url>
+    <loc>https://mresyzz.github.io/InstallReady/shellcheck-alternative/</loc>
   </url>
 </urlset>
