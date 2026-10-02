@@ -78,8 +78,8 @@ jobs:
 
       - name: Install OpsScript Gate pinned release commit
         run: |
-          # OpsScript Gate v0.7.0 release commit.
-          python -m pip install "git+https://github.com/Mresyzz/opsscript-gate.git@7581e672a5208bc95fa8e7a1b6636d4ddfb4e411"
+          # OpsScript Gate v0.8.0 release commit.
+          python -m pip install "git+https://github.com/Mresyzz/opsscript-gate.git@0d720a266d0532aae902c18c6248c94d020a143e"
 
       - name: Execute OpsScript Gate and capture native JSON
         run: |

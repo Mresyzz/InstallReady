@@ -20,7 +20,7 @@ jobs:
           persist-credentials: false
 
       - name: Run OpsScript Gate on the portable fixture
-        uses: Mresyzz/opsscript-gate@v0.7.0
+        uses: Mresyzz/opsscript-gate@v0.8.0
         with:
           script-path: benchmarks/portable.sh
           shell: auto
